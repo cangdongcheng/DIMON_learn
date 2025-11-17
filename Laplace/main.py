@@ -101,18 +101,18 @@ def main():
     dx_test = dx[-num_test:]
     
     ## coefficient for training data
-    dx1_train = dx_train[:, :, 0]
-    dx2_train = dx_train[:, :, 1]
+    dx1_train = dx_train[:, :, 0] # PCA in the x direction
+    dx2_train = dx_train[:, :, 1] # PCA in the y direction
 
     pca_x = PCA(n_components=PODMode)
     pca_x.fit(dx1_train - dx1_train.mean(axis=0))
     coeff_x_train = pca_x.transform(dx1_train - dx1_train.mean(axis=0))
-    coeff_x_test = pca_x.transform(dx_test[:, :, 0] - dx1_train.mean(axis=0))
+    coeff_x_test = pca_x.transform(dx_test[:, :, 0] - dx1_train.mean(axis=0)) # finding mode defined from training set
 
     pca_y = PCA(n_components=PODMode)
     pca_y.fit(dx2_train - dx2_train.mean(axis=0))
     coeff_y_train = pca_y.transform(dx2_train - dx2_train.mean(axis=0))
-    coeff_y_test = pca_y.transform(dx_test[:, :, 1] - dx2_train.mean(axis=0))
+    coeff_y_test = pca_y.transform(dx_test[:, :, 1] - dx2_train.mean(axis=0)) # finding mode defined from training set
     
     ## coefficient for training data, theta
     f_train = np.concatenate((coeff_x_train, coeff_y_train), axis=1)

@@ -50,12 +50,12 @@ def main():
     os.makedirs('CheckPts', exist_ok=True)
     
     ## dataset
-    datafile = "../data_train_h5/LATs_1006.npy"
+    datafile = "../LATs_1006.npy"
     with open(datafile, 'rb') as handle:
         dataset = pickle.load(handle)
 
     u_train = dataset['RTs_train']
-    u_train = np.transpose(u_train, (0, 2, 1))
+    u_train = np.transpose(u_train, (0, 2, 1)) # Pacing cites?
     surf_train = dataset["coeff_train"] 
     x_pace_train = dataset["x_pace_train"]
 
@@ -64,7 +64,7 @@ def main():
     surf_test = dataset["coeff_test"]
     x_pace_test = dataset["x_pace_test"]
 
-    x_data = dataset['x']
+    x_data = dataset['x'] #probably Lx3, in UVC coordinate, where L is the number of landmarks
     x_scale = dataset["x_scale"]
     u_scale = 100
 
