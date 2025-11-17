@@ -1,0 +1,10 @@
+*.npy
+*.npz
+*.pt
+*.mat
+*.txt
+*.png
+
+__pycache__/
+*.pyc
+*.out
