@@ -36,10 +36,10 @@ def main():
     if test_model == 1:
         load_path = "./CheckPts/model_chkpts.pt"
 
-    PODMode = 10 
+    PODMode = 10 # number of POD modes
     num_bc = 68 #204
     skip = 3
-    dim_br1 = [PODMode*2, 100, 100, 100]
+    dim_br1 = [PODMode*2, 100, 100, 100] #branch dimension for each layer, 4 layers
     dim_br2 = [num_bc, 150, 150, 150, 100] #150
     dim_tr = [2, 100, 100, 100]
     lmd = 0 #1e-6
@@ -59,31 +59,31 @@ def main():
     ## dataset main
     datafile = "./Laplace_data.mat"
     dataset = io.loadmat(datafile)
-
-    x = dataset["x_uni"]
-    x_mesh = dataset["x_mesh_data"]
-    dx = x_mesh - x ## shape: num_case, num_points, num_dim
-    u = dataset["u_data"]
-    u_bc = dataset["u_bc"]
-    u_bc = u_bc[:, ::skip]
-
     ## dataset supp
     datafile_supp = "./Laplace_data_supp.mat"
     dataset_supp = io.loadmat(datafile_supp)
-
-    x_mesh_supp = dataset_supp["x_mesh_data"]
-    dx_supp = x_mesh_supp - x ## shape: num_case, num_points, num_dim
-    u_supp = dataset_supp["u_data"]
-    u_bc_supp = dataset_supp["u_bc"]
-    u_bc_supp = u_bc_supp[:, ::skip]
-
     ## dataset supp 2
     datafile_supp2 = "./Laplace_data_supp2000.mat"
     dataset_supp2 = io.loadmat(datafile_supp2)
 
+    x = dataset["x_uni"]  #reference mesh coords, N*2
+
+    x_mesh = dataset["x_mesh_data"] #shape: num_case (1000), num_points, num_dim
+    x_mesh_supp = dataset_supp["x_mesh_data"]
     x_mesh_supp2 = dataset_supp2["x_mesh_data"]
+    
+    dx = x_mesh - x ## shape: num_case, num_points, num_dim
+    dx_supp = x_mesh_supp - x ## shape: num_case, num_points, num_dim
     dx_supp2 = x_mesh_supp2 - x ## shape: num_case, num_points, num_dim
+
+    u = dataset["u_data"]
+    u_supp = dataset_supp["u_data"]
     u_supp2 = dataset_supp2["u_data"]
+
+    u_bc = dataset["u_bc"] #boundary condition, shape: (num_case, num_bc(204))
+    u_bc = u_bc[:, ::skip]
+    u_bc_supp = dataset_supp["u_bc"]
+    u_bc_supp = u_bc_supp[:, ::skip]
     u_bc_supp2 = dataset_supp2["u_bc"]
     u_bc_supp2 = u_bc_supp2[:, ::skip]
 
@@ -91,8 +91,8 @@ def main():
     mesh_cells_supp2 = dataset_supp2["mesh_cells"][0]
 
     ## concat
-    x_mesh = np.concatenate((x_mesh, x_mesh_supp, x_mesh_supp2), axis=0)
-    dx = np.concatenate((dx, dx_supp, dx_supp2), axis=0)
+    x_mesh = np.concatenate((x_mesh, x_mesh_supp, x_mesh_supp2), axis=0) #combine all mesh coordinates
+    dx = np.concatenate((dx, dx_supp, dx_supp2), axis=0) #
     u = np.concatenate((u, u_supp, u_supp2), axis=0)
     u_bc = np.concatenate((u_bc, u_bc_supp, u_bc_supp2), axis=0)
     
@@ -114,10 +114,10 @@ def main():
     coeff_y_train = pca_y.transform(dx2_train - dx2_train.mean(axis=0))
     coeff_y_test = pca_y.transform(dx_test[:, :, 1] - dx2_train.mean(axis=0))
     
-
+    ## coefficient for training data, theta
     f_train = np.concatenate((coeff_x_train, coeff_y_train), axis=1)
   
-    ## coeffiient for testing data
+    ## coefficient for testing data
     f_test = np.concatenate((coeff_x_test, coeff_y_test), axis=1)
 
     ##########################
@@ -127,13 +127,13 @@ def main():
     f_bc_test = u_bc[-num_test:, :]
 
     ## tensor
-    u_test_tensor = torch.tensor(u_test, dtype=torch.float).to(device)
-    f_test_tensor = torch.tensor(f_test, dtype=torch.float).to(device)
-    f_bc_test_tensor = torch.tensor(f_bc_test, dtype=torch.float).to(device)
-
     u_train_tensor = torch.tensor(u_train, dtype=torch.float).to(device)
     f_train_tensor = torch.tensor(f_train, dtype=torch.float).to(device)
     f_bc_train_tensor = torch.tensor(f_bc_train, dtype=torch.float).to(device)
+
+    u_test_tensor = torch.tensor(u_test, dtype=torch.float).to(device)
+    f_test_tensor = torch.tensor(f_test, dtype=torch.float).to(device)
+    f_bc_test_tensor = torch.tensor(f_bc_test, dtype=torch.float).to(device)
 
     x_tensor = torch.tensor(x, dtype=torch.float).to(device)
 
