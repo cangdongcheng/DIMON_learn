@@ -55,7 +55,7 @@ def main():
         dataset = pickle.load(handle)
 
     u_train = dataset['RTs_train']
-    u_train = np.transpose(u_train, (0, 2, 1)) # Pacing cites?
+    u_train = np.transpose(u_train, (0, 2, 1)) # shape: [num_case, num_pace, num_uvc], where num_uvc is number of landmarks points?
     surf_train = dataset["coeff_train"] 
     x_pace_train = dataset["x_pace_train"]
 
