@@ -41,7 +41,7 @@ def train_fold(fold_id, train_idx, val_idx, test_idx,
     dim_br_geo = [60, 200, 200, 200, 200]
     dim_br_pace = [4, 200, 200, 200, 200]
     dim_tr = [4, 200, 200, 200, 200]
-    batch_size = 10
+    batch_size = 48
     learning_rate = 0.0005
 
     # Split by heart index

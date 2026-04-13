@@ -98,22 +98,24 @@ def main():
     device = args.device
     epochs = args.epochs
     test_model = args.test_model
+    width = args.width
+    batch_size = args.batch_size
 
     # --- Configuration ---
     num_geomode = 60
-    dim_br_geo = [num_geomode, 300, 300, 300, 300]  # branch: theta → (N, 300)
-    dim_tr = [5, 300, 300, 300, 300]  # trunk: (cobiveco, t) → (Q, 300)
+    dim_br_geo = [num_geomode] + [width] * 4  # branch: theta → (N, width)
+    dim_tr = [5] + [width] * 4                # trunk: (cobiveco, t) → (Q, width)
 
-    batch_size = 24
-    learning_rate = 0.0005
+    learning_rate = 0.001 if args.lr_schedule else 0.0005
     frame_step = 1  # data already subsampled at packaging time
     time_chunk_size = 25  # frames per chunk during forward pass
 
-    save_directory = f'geo_donet_{epochs}ep_{learning_rate}lr_w300'
+    lr_tag = '_lrsched' if args.lr_schedule else ''
+    save_directory = f'geo_donet_{epochs}ep_w{width}{lr_tag}'
 
     dump_test = f'./Predictions/{save_directory}/Test/'
     dump_train = f'./Predictions/{save_directory}/Train/'
-    model_path = f'CheckPts/model_chkpts_{save_directory}.pt'
+    model_path = args.model_path or f'CheckPts/model_chkpts_{save_directory}.pt'
     os.makedirs(dump_test, exist_ok=True)
     os.makedirs(dump_train, exist_ok=True)
     os.makedirs('CheckPts', exist_ok=True)
@@ -197,6 +199,12 @@ def main():
     model = opnn(dim_br_geo, dim_tr).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
+    if args.lr_schedule:
+        from torch.optim.lr_scheduler import LinearLR, ConstantLR, SequentialLR
+        sched1 = LinearLR(optimizer, start_factor=1.0, end_factor=0.5, total_iters=2500)
+        sched2 = ConstantLR(optimizer, factor=1.0, total_iters=epochs)
+        scheduler = SequentialLR(optimizer, schedulers=[sched1, sched2], milestones=[2500])
+
     n_params = sum(p.numel() for p in model.parameters())
     print(f"Model: geo {dim_br_geo}, trunk {dim_tr}, params {n_params:,}")
     print(f"Temporal chunks: {time_chunk_size} frames/chunk")
@@ -244,6 +252,9 @@ def main():
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
                 torch.save({'model_state_dict': model.state_dict()}, model_path)
+
+            if args.lr_schedule:
+                scheduler.step()
 
             if epoch % 10 == 0:
                 elapsed = timer.time() - tic

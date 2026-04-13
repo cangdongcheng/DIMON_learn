@@ -16,6 +16,14 @@ def ParseArgument():
                         help='save_step (default: 10000)')
     parser.add_argument('--test-model', type=int, default=0, metavar='N',
                         help='default training, testing as 1')
+    parser.add_argument('--width', type=int, default=300, metavar='N',
+                        help='hidden width for branch and trunk MLPs (default: 300)')
+    parser.add_argument('--batch-size', type=int, default=24, metavar='N',
+                        help='training batch size (default: 24; reduce to 16 for width=400)')
+    parser.add_argument('--lr-schedule', action='store_true',
+                        help='linear decay from 0.001 → 0.0005 over first 2500 epochs, then constant')
+    parser.add_argument('--model-path', type=str, default=None,
+                        help='explicit checkpoint path for --test-model 1 (overrides auto-generated name)')
     args = parser.parse_args()
     return args
 

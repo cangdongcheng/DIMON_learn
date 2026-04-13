@@ -49,6 +49,7 @@ def main():
     device = args.device
     epochs = args.epochs
     test_model = args.test_model
+    sync = (lambda: torch.cuda.synchronize()) if 'cuda' in str(device) else (lambda: None)
 
     normalize = 1
 
@@ -57,7 +58,7 @@ def main():
     dim_br_geo = [num_geomode, 200, 200, 200, 200]
     dim_tr = [4, 200, 200, 200, 200]  # 4D Cobiveco trunk
 
-    batch_size = 10
+    batch_size = 48
     learning_rate = 0.0005
 
     save_directory = f'cobiveco_{normalize}norm_{epochs}ep_{learning_rate}lr'
@@ -192,7 +193,7 @@ def main():
         # Loss curve
         fig, ax = plt.subplots(figsize=(8, 5))
         ax.semilogy(train_loss_his, label='Train', alpha=0.8)
-        ax.semilogy(test_loss_his, label='Val', alpha=0.8)
+        ax.semilogy(test_loss_his, label='Test', alpha=0.8)
         ax.set_xlabel('Epoch')
         ax.set_ylabel('MSE Loss')
         ax.set_title(f'{save_directory}')
@@ -218,7 +219,11 @@ def main():
 
         with torch.no_grad():
             # Denormalize predictions
+            sync()
+            t0 = time.perf_counter()
             y_pred_test_raw = model.forward(f_test_tensor, x_tensor)
+            sync()
+            infer_time = time.perf_counter() - t0
             u_test_pred = to_numpy(y_pred_test_raw) * u_std_train + u_mean_train
 
             f_train_subset = f_train_tensor[:num_viz_hearts]
@@ -299,6 +304,10 @@ def main():
                   f"{np.mean(mae_errors):10.2f}")
             print(f"{'Std':<35} {np.std(l2_errors):10.4f} "
                   f"{np.std(mae_errors):10.2f}")
+            print("-" * 58)
+            print(f"Inference timing ({num_test} hearts, single batch)")
+            print(f"  Total     : {infer_time*1000:.1f} ms")
+            print(f"  Per heart : {infer_time/num_test*1000:.1f} ms")
 
             # Save predictions
             np.savez_compressed(

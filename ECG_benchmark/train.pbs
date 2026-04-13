@@ -1,0 +1,30 @@
+#!/bin/bash
+#PBS -N ECG_benchmark
+#PBS -l walltime=03:00:00
+#PBS -l select=1:ncpus=8:ngpus=1:mem=32gb
+#PBS -P personal-e1590340
+#PBS -j oe
+
+source ~/load_dimon_env.sh
+cd /home/users/nus/e1590340/cardiac_simulation/DIMON/ECG_benchmark
+
+echo "=== START $(date) ==="
+echo "Node: $(hostname)"
+nvidia-smi
+
+for MODEL in mlp gru conv; do
+    echo ""
+    echo "==============================="
+    echo "  Training: $MODEL"
+    echo "==============================="
+    python -u main.py --model $MODEL --epochs 5000 --device cuda
+
+    echo ""
+    echo "==============================="
+    echo "  Evaluating: $MODEL"
+    echo "==============================="
+    python -u main.py --model $MODEL --epochs 5000 --test-model 1 --device cuda
+done
+
+echo ""
+echo "=== DONE $(date) ==="

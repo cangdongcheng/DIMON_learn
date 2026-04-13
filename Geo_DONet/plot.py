@@ -36,7 +36,7 @@ def plot_loss(train_path, test_path, save_path):
     plt.semilogy(sampled_epochs_test, sampled_test_loss, label='Test Loss', 
                  color='red', linestyle='--', marker='o', markersize=4)
 
-    plt.title('DIMON Training & Test Loss (Log Scale)', fontsize=14)
+    plt.title('Training & Test Loss (Log Scale)', fontsize=14)
     plt.xlabel('Epoch', fontsize=12)
     plt.ylabel('MSE Loss (Normalized)', fontsize=12)
     plt.grid(True, which="both", ls="-", alpha=0.2)
@@ -52,5 +52,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--dir", required=True, help="Predictions subdirectory name")
     args = parser.parse_args()
-    d = f"./Predictions/{args.dir}"
+    d = args.dir if os.path.isabs(args.dir) or args.dir.startswith('./') or args.dir.startswith('../') \
+        else f"./Predictions/{args.dir}"
     plot_loss(f"{d}/train_loss.txt", f"{d}/test_loss.txt", f"{d}/loss_curve.png")

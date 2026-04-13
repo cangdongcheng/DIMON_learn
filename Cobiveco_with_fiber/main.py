@@ -28,6 +28,7 @@ def main():
     device = args.device
     epochs = args.epochs
     test_model = args.test_model
+    sync = (lambda: torch.cuda.synchronize()) if 'cuda' in str(device) else (lambda: None)
     
     normalize = 1  # Switch: 1 to enable, 0 to disable
     
@@ -36,7 +37,7 @@ def main():
     dim_br_pace = [4, 200, 200, 200, 200] 
     dim_tr =      [4, 200, 200, 200, 200]
 
-    batch_size = 10
+    batch_size = 48
     learning_rate = 0.0005
     
     save_directory = f'cobiveco4d_{normalize}norm_{epochs}ep_{learning_rate}lr'
@@ -171,7 +172,7 @@ def main():
         # Loss curve
         fig, ax = plt.subplots(figsize=(8, 5))
         ax.semilogy(train_loss_his, label='Train', alpha=0.8)
-        ax.semilogy(test_loss_his, label='Val', alpha=0.8)
+        ax.semilogy(test_loss_his, label='Test', alpha=0.8)
         ax.set_xlabel('Epoch')
         ax.set_ylabel('MSE Loss')
         ax.set_title(save_directory)
@@ -196,7 +197,11 @@ def main():
             f_train_subset = f_train_tensor[:num_viz_hearts]
 
             # Denormalization using strictly training stats (u_std_train, u_mean_train)
+            sync()
+            t0 = time.perf_counter()
             y_pred_test_raw = model.forward(f_test_tensor, x_pace_tensor, x_tensor)
+            sync()
+            infer_time = time.perf_counter() - t0
             u_test_pred = to_numpy(y_pred_test_raw) * u_std_train + u_mean_train
                 
             y_pred_train_raw = model.forward(f_train_subset, x_pace_tensor, x_tensor)
@@ -282,6 +287,13 @@ def main():
             pool_mae_m = df['MAE'].mean()
             pool_mae_s = df['MAE'].std()
             print(f"Pooled  : L2 = {pool_l2_m:.4f} ± {pool_l2_s:.4f} | MAE = {pool_mae_m:.4f} ± {pool_mae_s:.4f} ms")
+            print("---------------------------------------")
+            n_hearts = num_test_hearts
+            n_sims   = 9
+            print(f"Inference timing ({n_hearts} hearts × {n_sims} pacing sites, single batch)")
+            print(f"  Total          : {infer_time*1000:.1f} ms")
+            print(f"  Per heart      : {infer_time/n_hearts*1000:.1f} ms")
+            print(f"  Per simulation : {infer_time/(n_hearts*n_sims)*1000:.1f} ms")
             print("---------------------------------------\n")
             
             df_melted = df.melt(id_vars=['Pacing_ID'], value_vars=['Relative L2 Error', 'MAE'],

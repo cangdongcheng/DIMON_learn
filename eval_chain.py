@@ -26,6 +26,8 @@ import argparse
 import os
 import sys
 
+import time
+
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
@@ -259,6 +261,7 @@ def main():
 
     device = args.device
     os.makedirs(args.outdir, exist_ok=True)
+    sync = (lambda: torch.cuda.synchronize()) if 'cuda' in str(device) else (lambda: None)
 
     # ── Load data ──────────────────────────────────────────────────────────
     print("Loading data...")
@@ -343,10 +346,15 @@ def main():
     geo_model.eval()
 
     print("  Running Geo-DONet inference...")
+    geo_times = []
     with torch.no_grad():
         preds = []
         for i in range(num_test):
+            sync()
+            t0 = time.perf_counter()
             p = chunked_forward(geo_model, f_test_t[i:i+1], trunk_chunks, n_pts)
+            sync()
+            geo_times.append(time.perf_counter() - t0)
             preds.append(p)
         vm_pred_norm_t = torch.cat(preds, dim=0)           # (25, 50797, 121)
 
@@ -361,7 +369,11 @@ def main():
     # both models use the same vm_mean/vm_std, so no conversion needed.
     print("  Running pipeline B: ECG_transfer(Geo-DONet V_m)...")
     with torch.no_grad():
+        sync()
+        t0 = time.perf_counter()
         ecg_B_norm = ecg_model(vm_pred_norm_t).cpu().numpy()  # (25, 121, 10)
+        sync()
+        ecg_B_time = time.perf_counter() - t0
     ecg_B = ecg_B_norm * ecg_std + ecg_mean
 
     # ── Pipeline C: Geo-DONet-ECG joint (optional) ─────────────────────────
@@ -413,6 +425,17 @@ def main():
         print(f"  {lbl_short:<28} {np.mean(r10):6.4f}±{np.std(r10):.4f}"
               f"  {np.mean(r12):6.4f}±{np.std(r12):.4f}")
     print(f"\n  V_m error (Geo-DONet): {np.mean(vm_l2):.4f} ± {np.std(vm_l2):.4f}")
+
+    geo_total = sum(geo_times)
+    chain_B_total = geo_total + ecg_B_time
+    print(f"\n  Inference timing ({num_test} test cases)")
+    print(f"  {'─'*56}")
+    print(f"  {'Geo-DONet (total)':<30} {geo_total*1000:>8.1f} ms"
+          f"  ({np.mean(geo_times)*1000:.1f} ± {np.std(geo_times)*1000:.1f} ms/case)")
+    print(f"  {'ECG_transfer B (batched)':<30} {ecg_B_time*1000:>8.1f} ms"
+          f"  ({ecg_B_time/num_test*1000:.1f} ms/case avg)")
+    print(f"  {'Chain B total':<30} {chain_B_total*1000:>8.1f} ms"
+          f"  ({chain_B_total/num_test*1000:.1f} ms/case avg)")
 
     # ── Plots ──────────────────────────────────────────────────────────────
     print(f"\nSaving plots to {args.outdir}/")
