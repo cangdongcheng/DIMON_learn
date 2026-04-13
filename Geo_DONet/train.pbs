@@ -1,0 +1,17 @@
+#!/bin/bash
+#PBS -N Geo_DONet
+#PBS -l walltime=07:00:00
+#PBS -l select=1:ncpus=32:ngpus=1:mem=400gb
+#PBS -P personal-e1590340
+#PBS -j oe
+
+source ~/load_dimon_env.sh
+cd /home/users/nus/e1590340/cardiac_simulation/DIMON/Geo_DONet
+
+echo "=== START $(date) ==="
+echo "Node: $(hostname)"
+nvidia-smi
+
+python -u main.py --epochs 5000 --device cuda
+
+echo "=== DONE $(date) ==="

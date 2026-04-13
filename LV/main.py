@@ -34,8 +34,8 @@ def main():
     if_normal = 1
 
     dim_br_geo = [num_geomode, 200, 200, 200, 200]
-    dim_br_pace = [2, 200, 200, 200, 200]
-    dim_tr = [3, 200, 200, 200, 200] ## need to try 4 later
+    dim_br_pace = [2, 200, 200, 200, 200] ## 2 is for pace on epi, in UVC where transmurality is 0
+    dim_tr = [3, 200, 200, 200, 200] ## 3 is for UVC
 
     num_train = 900
     num_test = 106

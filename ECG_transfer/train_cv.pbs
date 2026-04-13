@@ -1,0 +1,24 @@
+#!/bin/bash
+#PBS -N ECG_xfer_CV
+#PBS -l walltime=06:00:00
+#PBS -l select=1:ncpus=8:ngpus=1:mem=64gb
+#PBS -P personal-e1590340
+#PBS -j oe
+
+source ~/load_dimon_env.sh
+cd /home/users/nus/e1590340/cardiac_simulation/DIMON/ECG_transfer
+
+echo "=== START $(date) ==="
+echo "Node: $(hostname)"
+nvidia-smi
+
+echo "--- linear 5-fold CV ---"
+python -u main_cv.py --model linear --epochs 5000 --device cuda
+
+echo "--- mlp 5-fold CV ---"
+python -u main_cv.py --model mlp --epochs 5000 --device cuda
+
+echo "--- temporal_conv 5-fold CV ---"
+python -u main_cv.py --model temporal_conv --epochs 5000 --device cuda
+
+echo "=== DONE $(date) ==="

@@ -25,6 +25,7 @@ def ParseArgument():
     #                     help = 'batch_size (default: 1000000)')
     parser.add_argument('--test-model', type=int, default=0, metavar='N',
                         help = 'default training, testing as 1')
+
     args = parser.parse_args()
     return args
 

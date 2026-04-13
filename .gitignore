@@ -1,10 +1,28 @@
+# Training data
 *.npy
 *.npz
-*.pt
 *.mat
+
+# Model checkpoints
+*.pt
+*.pth
+
+# Output directories
+Predictions/
+CheckPts/
+CV_*/
+
+# Logs and plots
 *.txt
 *.png
+*.out
+*.log
 
+# Python cache
 __pycache__/
 *.pyc
-*.out
+
+# Miscellaneous
+*.pdf
+*.svg
+tenTusscher/
