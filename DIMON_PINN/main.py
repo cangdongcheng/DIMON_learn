@@ -33,10 +33,10 @@ def main():
     dim_br_pace = [4, 200, 200, 200, 200] 
     dim_tr =      [3, 200, 200, 200, 200]
 
-    batch_size = 4
+    batch_size = 24
     learning_rate = 0.0005
     
-    save_directory = f'pinn_alpha{set_alpha}_{epochs}ep_{learning_rate}lr'
+    save_directory = f'pinn_v600_fixed_alpha{set_alpha}_{epochs}ep_{learning_rate}lr'
 
     dump_test = f'./Predictions/{save_directory}/Test/'
     dump_train = f'./Predictions/{save_directory}/Train/'
@@ -46,12 +46,12 @@ def main():
     os.makedirs('CheckPts', exist_ok=True)
 
     ## 2. Load Stacked Dataset
-    data_path = "../DIMON_training_data_healthy.npz"
-    data_path2 = "../reference_cobiveco.npz"
+    data_path = "/home/users/nus/e1590340/scratch/Mengxiao_20260212_VTK_Merged_ED_CSV/DIMON_training_data_healthy_fixed.npz"
+    data_path2 = "/home/users/nus/e1590340/scratch/Mengxiao_20260212_VTK_Merged_ED_CSV/reference_cobiveco.npz"
 
     num_train_hearts = 95
-    num_val_hearts = 10
-    num_test_hearts = 20
+    num_val_hearts = 5
+    num_test_hearts = 25
     
     if not os.path.exists(data_path):
         raise FileNotFoundError(f"Stacked data not found at {data_path}")
@@ -142,7 +142,7 @@ def main():
 
         x_tensor_norm.requires_grad_(True)
         
-        v_f, v_s, v_n = 640.0, 240.0, 240.0
+        v_f, v_s, v_n = 600.0, 240.0, 240.0
         f_dir = anisotropy_tensor[:, 0:3]
         s_dir = anisotropy_tensor[:, 3:6]
         n_dir = anisotropy_tensor[:, 6:9]
@@ -229,6 +229,22 @@ def main():
         print(f"Total training time: {int((time.time()-tic)/60)} min")
         np.savetxt(f'./Predictions/{save_directory}/train_loss.txt', np.array(train_loss_his))
         np.savetxt(f'./Predictions/{save_directory}/test_loss.txt', np.array(test_loss_his))
+
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+        fig, ax = plt.subplots(figsize=(8, 5))
+        ax.semilogy(train_loss_his, label='Train')
+        ax.semilogy(test_loss_his, label='Val')
+        ax.set_xlabel('Epoch')
+        ax.set_ylabel('MSE Loss')
+        ax.set_title(save_directory)
+        ax.legend()
+        ax.grid(True, alpha=0.3)
+        plt.tight_layout()
+        plt.savefig(f'./Predictions/{save_directory}/loss_curve.png', dpi=200)
+        plt.close()
+        print(f"Loss curve saved to ./Predictions/{save_directory}/loss_curve.png")
 
     else:
         checkpoint = torch.load(model_path, map_location=device, weights_only=True)

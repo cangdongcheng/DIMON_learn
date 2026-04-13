@@ -32,7 +32,6 @@ def main():
     normalize = 1  # Switch: 1 to enable, 0 to disable
     
     # Architecture dimensions
-    # dim_tr: 13 (4 Cobiveco + 9 Anisotropy)
     dim_br_geo =  [60, 200, 200, 200, 200]
     dim_br_pace = [4, 200, 200, 200, 200] 
     dim_tr =      [4, 200, 200, 200, 200]
@@ -40,7 +39,7 @@ def main():
     batch_size = 10
     learning_rate = 0.0005
     
-    save_directory = f'cobiveco_{normalize}norm_{epochs}ep_{learning_rate}lr'
+    save_directory = f'cobiveco4d_{normalize}norm_{epochs}ep_{learning_rate}lr'
 
     dump_test = f'./Predictions/{save_directory}/Test/'
     dump_train = f'./Predictions/{save_directory}/Train/'
@@ -50,12 +49,12 @@ def main():
     os.makedirs('CheckPts', exist_ok=True)
 
     ## 2. Load Stacked Dataset
-    data_path = "../DIMON_training_data_healthy.npz"
-    data_path2 = "../reference_cobiveco.npz"
+    data_path = "/home/users/nus/e1590340/scratch/Mengxiao_20260212_VTK_Merged_ED_CSV/DIMON_training_data_healthy_fixed.npz"
+    data_path2 = "/home/users/nus/e1590340/scratch/Mengxiao_20260212_VTK_Merged_ED_CSV/reference_cobiveco.npz"
 
     num_train_hearts = 95
-    num_val_hearts = 10
-    num_test_hearts = 20
+    num_val_hearts = 5
+    num_test_hearts = 25
 
     if not os.path.exists(data_path):
         raise FileNotFoundError(f"Stacked data not found at {data_path}")
@@ -74,8 +73,8 @@ def main():
     anisotropy = dataset['ref_anisotropy']
     cartesian_coords = dataset['cartesian_coords']
 
-    # Combine into 13-D Trunk Input
-    trunk_raw = cobiveco_coords[:,:4]
+    # Trunk Input: 4D Cobiveco (ab, rt, tm, tv)
+    trunk_raw = cobiveco_coords[:, :4]
 
     f_train = theta[:num_train_hearts]
     u_train_raw = u_all[:num_train_hearts]
@@ -175,7 +174,7 @@ def main():
         ax.semilogy(test_loss_his, label='Val', alpha=0.8)
         ax.set_xlabel('Epoch')
         ax.set_ylabel('MSE Loss')
-        ax.set_title(f'{save_directory}')
+        ax.set_title(save_directory)
         ax.legend()
         ax.grid(True, alpha=0.3)
         plt.tight_layout()

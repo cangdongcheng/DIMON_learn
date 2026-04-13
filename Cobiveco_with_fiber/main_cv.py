@@ -142,8 +142,8 @@ def main():
     os.makedirs(save_dir, exist_ok=True)
 
     # Load data
-    data_path = "../DIMON_training_data_healthy.npz"
-    data_path2 = "../reference_cobiveco.npz"
+    data_path = "/home/users/nus/e1590340/scratch/Mengxiao_20260212_VTK_Merged_ED_CSV/DIMON_training_data_healthy_fixed.npz"
+    data_path2 = "/home/users/nus/e1590340/scratch/Mengxiao_20260212_VTK_Merged_ED_CSV/reference_cobiveco.npz"
     dataset = np.load(data_path)
     dataset2 = np.load(data_path2)
 
