@@ -64,7 +64,7 @@ def main():
     test_model = args.test_model
     model_name = args.model
 
-    batch_size = 10
+    batch_size = 48
     learning_rate = 1e-4
 
     save_dir = f'Predictions/{model_name}_{epochs}ep'
@@ -203,21 +203,43 @@ def main():
 
         # Per-case metrics
         electrode_names = ["LA", "RA", "LL", "RL", "V1", "V2", "V3", "V4", "V5", "V6"]
-        print(f"\n{'Case':<35} {'Rel L2':>10} {'MAE (mV)':>10}")
-        print("-" * 58)
-        l2_errors, mae_errors = [], []
+
+        def rel_l1(p, t):
+            return np.abs(p - t).sum() / (np.abs(t).sum() + 1e-12)
+
+        def rel_l2(p, t):
+            return np.linalg.norm(p - t) / (np.linalg.norm(t) + 1e-12)
+
+        def pcc_lead_mean(p, t):
+            """Per-lead Pearson r averaged across leads. p/t shape (T, L)."""
+            pm = p - p.mean(axis=0, keepdims=True)
+            tm = t - t.mean(axis=0, keepdims=True)
+            num = (pm * tm).sum(axis=0)
+            den = np.sqrt((pm ** 2).sum(axis=0) * (tm ** 2).sum(axis=0))
+            r = np.where(den > 1e-12, num / np.maximum(den, 1e-12), 0.0)
+            return float(r.mean())
+
+        print(f"\n--- 10-Electrode Metrics ---")
+        print(f"{'Case':<35} {'Rel L1':>8} {'Rel L2':>8} "
+              f"{'MAE (mV)':>10} {'PCC':>8}")
+        print("-" * 80)
+        l1_errors, l2_errors, mae_errors, pcc_errors = [], [], [], []
         for i in range(num_test):
             p = pred_phy[i]       # (T, 10)
             t = ecg_test[i]       # (T, 10)
-            l2 = np.linalg.norm(p - t) / np.linalg.norm(t)
+            a = rel_l1(p, t)
+            l2 = rel_l2(p, t)
             mae = np.mean(np.abs(p - t))
-            l2_errors.append(l2)
-            mae_errors.append(mae)
+            c = pcc_lead_mean(p, t)
+            l1_errors.append(a); l2_errors.append(l2)
+            mae_errors.append(mae); pcc_errors.append(c)
             print(f"{case_names[num_train + num_val + i]:<35}"
-                  f" {l2:10.4f} {mae:10.6f}")
-        print("-" * 58)
-        print(f"{'Mean':<35} {np.mean(l2_errors):10.4f} {np.mean(mae_errors):10.6f}")
-        print(f"{'Std':<35} {np.std(l2_errors):10.4f} {np.std(mae_errors):10.6f}")
+                  f" {a:8.4f} {l2:8.4f} {mae:10.6f} {c:8.4f}")
+        print("-" * 80)
+        print(f"{'Mean':<35} {np.mean(l1_errors):8.4f} {np.mean(l2_errors):8.4f} "
+              f"{np.mean(mae_errors):10.6f} {np.mean(pcc_errors):8.4f}")
+        print(f"{'Std':<35} {np.std(l1_errors):8.4f} {np.std(l2_errors):8.4f} "
+              f"{np.std(mae_errors):10.6f} {np.std(pcc_errors):8.4f}")
 
         # --- Convert 10 electrodes → 12-lead ECG ---
         # Electrode order: LA, RA, LL, RL, V1, V2, V3, V4, V5, V6
@@ -246,21 +268,26 @@ def main():
 
         # Per-case 12-lead metrics
         print(f"\n--- 12-Lead ECG Metrics ---")
-        print(f"{'Case':<35} {'Rel L2':>10} {'MAE (mV)':>10}")
-        print("-" * 58)
-        l2_12lead, mae_12lead = [], []
+        print(f"{'Case':<35} {'Rel L1':>8} {'Rel L2':>8} "
+              f"{'MAE (mV)':>10} {'PCC':>8}")
+        print("-" * 80)
+        l1_12lead, l2_12lead, mae_12lead, pcc_12lead = [], [], [], []
         for i in range(num_test):
             pred_12 = to_12lead(pred_phy[i])
             true_12 = to_12lead(ecg_test[i])
-            l2 = np.linalg.norm(pred_12 - true_12) / np.linalg.norm(true_12)
+            a = rel_l1(pred_12, true_12)
+            l2 = rel_l2(pred_12, true_12)
             mae = np.mean(np.abs(pred_12 - true_12))
-            l2_12lead.append(l2)
-            mae_12lead.append(mae)
+            c = pcc_lead_mean(pred_12, true_12)
+            l1_12lead.append(a); l2_12lead.append(l2)
+            mae_12lead.append(mae); pcc_12lead.append(c)
             print(f"{case_names[num_train + num_val + i]:<35}"
-                  f" {l2:10.4f} {mae:10.6f}")
-        print("-" * 58)
-        print(f"{'Mean':<35} {np.mean(l2_12lead):10.4f} {np.mean(mae_12lead):10.6f}")
-        print(f"{'Std':<35} {np.std(l2_12lead):10.4f} {np.std(mae_12lead):10.6f}")
+                  f" {a:8.4f} {l2:8.4f} {mae:10.6f} {c:8.4f}")
+        print("-" * 80)
+        print(f"{'Mean':<35} {np.mean(l1_12lead):8.4f} {np.mean(l2_12lead):8.4f} "
+              f"{np.mean(mae_12lead):10.6f} {np.mean(pcc_12lead):8.4f}")
+        print(f"{'Std':<35} {np.std(l1_12lead):8.4f} {np.std(l2_12lead):8.4f} "
+              f"{np.std(mae_12lead):10.6f} {np.std(pcc_12lead):8.4f}")
 
         # --- Plot: 10-electrode raw traces ---
         num_viz = min(2, num_test)

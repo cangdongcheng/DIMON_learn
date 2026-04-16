@@ -24,6 +24,16 @@ def ParseArgument():
                         help='linear decay from 0.001 → 0.0005 over first 2500 epochs, then constant')
     parser.add_argument('--model-path', type=str, default=None,
                         help='explicit checkpoint path for --test-model 1 (overrides auto-generated name)')
+    parser.add_argument('--skip-snapshots', action='store_true',
+                        help='skip the 3D V_m snapshot and AT scatter SVGs (keeps traces + metrics)')
+    parser.add_argument('--vm-frames', type=str, default='0:300:10',
+                        metavar='START:END:STEP',
+                        help='V_m snapshot time range in ms (default: 0:300:10 → '
+                             't=0,10,...,300). END is inclusive.')
+    parser.add_argument('--trunk', type=str, default='cobiveco',
+                        choices=['cobiveco', 'xyz'],
+                        help='trunk spatial coordinates: 4D Cobiveco (ab,rt,tm,tv) '
+                             'or 3D normalised Cartesian xyz (default: cobiveco)')
     args = parser.parse_args()
     return args
 

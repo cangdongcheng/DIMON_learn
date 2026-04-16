@@ -14,9 +14,9 @@ without any intermediate conversion.
 Usage:
     source ~/load_dimon_env.sh
     cd DIMON
-    python eval_chain.py \\
-        --geodnet-ckpt Geo_DONet/CheckPts/model_chkpts_geo_donet_5000ep_0.0005lr_w300.pt \\
-        --ecg-ckpt     ECG_transfer/CheckPts/temporal_conv_10000ep.pt \\
+    python eval_chain.py \
+        --geodnet-ckpt Geo_DONet/CheckPts/model_chkpts_geo_donet_5000ep_0.0005lr_w300.pt \
+        --ecg-ckpt     ECG_transfer/CheckPts/temporal_conv_10000ep.pt \
         --device cuda
 
     # Once Geo-DONet-ECG job finishes, add:
@@ -121,9 +121,10 @@ def to_12lead(raw_10):
 LEAD_NAMES = ["I", "II", "III", "aVR", "aVL", "aVF",
                "V1", "V2", "V3", "V4", "V5", "V6"]
 LAYOUT = [
-    ["I",   "aVR", "V1", "V4"],
-    ["II",  "aVL", "V2", "V5"],
-    ["III", "aVF", "V3", "V6"],
+    ["I",   "II",  "III"],
+    ["aVR", "aVL", "aVF"],
+    ["V1",  "V2",  "V3"],
+    ["V4",  "V5",  "V6"],
 ]
 
 
@@ -135,110 +136,184 @@ def rel_l2(pred, true):
     return np.linalg.norm(pred - true) / (np.linalg.norm(true) + 1e-12)
 
 
+def rel_l1(pred, true):
+    return np.abs(pred - true).sum() / (np.abs(true).sum() + 1e-12)
+
+
+def pcc_lead_mean(pred, true):
+    """Pearson r per lead, averaged over leads.
+    pred/true shape: (T, L). Returns scalar mean and array of per-lead r.
+    Handles flat (zero-variance) leads by returning 0 for them."""
+    pm = pred - pred.mean(axis=0, keepdims=True)
+    tm = true - true.mean(axis=0, keepdims=True)
+    num = (pm * tm).sum(axis=0)
+    den = np.sqrt((pm ** 2).sum(axis=0) * (tm ** 2).sum(axis=0))
+    r = np.where(den > 1e-12, num / np.maximum(den, 1e-12), 0.0)
+    return float(r.mean()), r
+
+
 def per_case_metrics(preds_phy, gt_phy, case_names, label):
-    """Print per-case 10-elec and 12-lead metrics, return arrays."""
+    """Print per-case 10-elec and 12-lead metrics, return arrays.
+    Reports Rel L1, Rel L2 and PCC (mean of per-lead Pearson r)."""
     n = len(preds_phy)
+    l1_10, l1_12 = [], []
     l2_10, l2_12 = [], []
-    print(f"\n{'─'*70}")
+    pcc_10, pcc_12 = [], []
+    print(f"\n{'─'*110}")
     print(f"  {label}")
-    print(f"{'─'*70}")
-    print(f"  {'Case':<35} {'10-elec Rel L2':>14} {'12-lead Rel L2':>14}")
-    print(f"  {'─'*63}")
+    print(f"{'─'*110}")
+    print(f"  {'Case':<35} {'L1(10)':>8} {'L1(12)':>8} "
+          f"{'L2(10)':>8} {'L2(12)':>8} {'PCC(10)':>9} {'PCC(12)':>9}")
+    print(f"  {'─'*100}")
     for i in range(n):
-        r10 = rel_l2(preds_phy[i], gt_phy[i])
-        p12 = to_12lead(preds_phy[i])
-        t12 = to_12lead(gt_phy[i])
-        r12 = rel_l2(p12, t12)
-        l2_10.append(r10)
-        l2_12.append(r12)
-        print(f"  {case_names[i]:<35} {r10:14.4f} {r12:14.4f}")
-    print(f"  {'─'*63}")
-    print(f"  {'Mean':<35} {np.mean(l2_10):14.4f} {np.mean(l2_12):14.4f}")
-    print(f"  {'Std':<35} {np.std(l2_10):14.4f} {np.std(l2_12):14.4f}")
-    return np.array(l2_10), np.array(l2_12)
+        p10 = preds_phy[i]; t10 = gt_phy[i]
+        p12 = to_12lead(p10); t12 = to_12lead(t10)
+
+        a10 = rel_l1(p10, t10); a12 = rel_l1(p12, t12)
+        r10 = rel_l2(p10, t10); r12 = rel_l2(p12, t12)
+        c10, _ = pcc_lead_mean(p10, t10); c12, _ = pcc_lead_mean(p12, t12)
+
+        l1_10.append(a10); l1_12.append(a12)
+        l2_10.append(r10); l2_12.append(r12)
+        pcc_10.append(c10); pcc_12.append(c12)
+        print(f"  {case_names[i]:<35} {a10:8.4f} {a12:8.4f} "
+              f"{r10:8.4f} {r12:8.4f} {c10:9.4f} {c12:9.4f}")
+    print(f"  {'─'*100}")
+    print(f"  {'Mean':<35} {np.mean(l1_10):8.4f} {np.mean(l1_12):8.4f} "
+          f"{np.mean(l2_10):8.4f} {np.mean(l2_12):8.4f} "
+          f"{np.mean(pcc_10):9.4f} {np.mean(pcc_12):9.4f}")
+    print(f"  {'Std':<35} {np.std(l1_10):8.4f} {np.std(l1_12):8.4f} "
+          f"{np.std(l2_10):8.4f} {np.std(l2_12):8.4f} "
+          f"{np.std(pcc_10):9.4f} {np.std(pcc_12):9.4f}")
+    return (np.array(l1_10), np.array(l1_12),
+            np.array(l2_10), np.array(l2_12),
+            np.array(pcc_10), np.array(pcc_12))
 
 
 # ---------------------------------------------------------------------------
 # Plots
 # ---------------------------------------------------------------------------
 
-def plot_ecg_comparison(time_ms, ecg_gt, pipelines, case_name, outdir):
+def _draw_12lead_grid(time_ms, trace_sets, case_name, ylim, out_path,
+                      show_legend=False):
     """
-    pipelines: list of (label, ecg_phy (T, 10)) tuples.
-    Saves 3×4 12-lead grid + rhythm strip for one test case.
+    trace_sets: list of (label, color, linestyle, lw, values (T, 12)) tuples.
+    Renders the 4×3 12-lead clinical layout (no gridlines, no ticks),
+    shared ylim across all panels, writes SVG (transparent).
     """
-    true_12 = to_12lead(ecg_gt)
-    true_dict = {n: true_12[:, j] for j, n in enumerate(LEAD_NAMES)}
-
-    colors = ['C0', 'C1', 'C2', 'C3']
-
-    fig, axes = plt.subplots(4, 4, figsize=(18, 10), sharex=True)
+    fig, axes = plt.subplots(4, 3, figsize=(14, 10), sharex=True, sharey=True)
+    fig.patch.set_alpha(0.0)
     for row_idx, row in enumerate(LAYOUT):
         for col_idx, ln in enumerate(row):
             ax = axes[row_idx, col_idx]
-            ax.plot(time_ms, true_dict[ln] * 1000, 'k-', lw=1.2, label='GT')
-            for ci, (lbl, ecg_phy) in enumerate(pipelines):
-                pred_12 = to_12lead(ecg_phy)
-                pred_dict = {n: pred_12[:, j] for j, n in enumerate(LEAD_NAMES)}
-                ax.plot(time_ms, pred_dict[ln] * 1000,
-                        color=colors[ci], lw=0.9, ls='--', label=lbl)
-            ax.set_title(ln, fontsize=10, pad=2)
-            ax.set_ylabel('µV', fontsize=7)
-            ax.grid(True, alpha=0.3)
-            if row_idx == 0 and col_idx == 0:
-                ax.legend(fontsize=7)
-
-    # Rhythm strip (Lead II, full row)
-    for ax in axes[3, :]:
-        ax.set_visible(False)
-    ax_rhythm = fig.add_subplot(4, 1, 4)
-    ax_rhythm.plot(time_ms, true_dict["II"] * 1000, 'k-', lw=1.2, label='GT')
-    for ci, (lbl, ecg_phy) in enumerate(pipelines):
-        pred_12 = to_12lead(ecg_phy)
-        ax_rhythm.plot(time_ms, pred_12[:, 1] * 1000,
-                       color=colors[ci], lw=0.9, ls='--', label=lbl)
-    ax_rhythm.set_title('II (Rhythm Strip)', fontsize=10, pad=2)
-    ax_rhythm.set_xlabel('Time (ms)')
-    ax_rhythm.set_ylabel('µV', fontsize=7)
-    ax_rhythm.grid(True, alpha=0.3)
-    ax_rhythm.legend(fontsize=7)
-
-    fig.suptitle(f'12-Lead ECG — {case_name}', fontsize=12)
+            ax.patch.set_alpha(0.0)
+            j = LEAD_NAMES.index(ln)
+            for lbl, color, ls, lw, vals in trace_sets:
+                ax.plot(time_ms, vals[:, j] * 1000, color=color, ls=ls,
+                        lw=lw, label=lbl)
+            ax.set_title(ln, fontsize=24, pad=4)
+            ax.set_xticks([])
+            ax.set_yticks([])
+            ax.set_xlabel('')
+            ax.set_ylabel('')
+            ax.set_ylim(ylim)
+            if show_legend and ln == "V6":
+                ax.legend(fontsize=8, loc='upper right')
     plt.tight_layout()
-    fname = os.path.join(outdir, f'ecg_{case_name}.png')
-    plt.savefig(fname, dpi=150)
+    plt.savefig(out_path, format='svg', bbox_inches='tight', transparent=True)
     plt.close()
-    print(f"  Saved {fname}")
 
 
-def plot_summary_bars(results, outdir):
+def _draw_legend_only(trace_sets, out_path):
     """
-    results: list of (label, l2_10 array, l2_12 array).
-    Side-by-side mean bars with std error bars.
+    Standalone legend figure matching the styling of trace_sets
+    (label, color, linestyle, lw, _). Writes transparent SVG.
     """
-    labels = [r[0] for r in results]
+    fig = plt.figure(figsize=(6, 0.8))
+    fig.patch.set_alpha(0.0)
+    # Build proxy handles so we don't need any real axes/data
+    from matplotlib.lines import Line2D
+    handles = [Line2D([0], [0], color=c, ls=ls, lw=lw, label=lbl)
+               for lbl, c, ls, lw, _ in trace_sets]
+    fig.legend(handles=handles, labels=[h.get_label() for h in handles],
+               loc='center', ncol=len(handles), fontsize=12, frameon=False)
+    plt.savefig(out_path, format='svg', bbox_inches='tight', transparent=True)
+    plt.close()
+
+
+def plot_ecg_comparison(time_ms, ecg_gt, pipelines, case_name, outdir):
+    """
+    Emits four SVGs per case — GT only, each pipeline alone, and combined —
+    all on a shared y-scale. `pipelines` is a list of (label, ecg_phy (T, 10)).
+    The combined plot ships without an embedded legend; the legend is written
+    to a separate SVG (`ecg_<case>_combined_legend.svg`).
+    """
+    true_12 = to_12lead(ecg_gt)
+    pred_12s = [(lbl, to_12lead(ecg_phy)) for lbl, ecg_phy in pipelines]
+
+    # Shared y-limits (µV) across GT + every pipeline
+    stack = [true_12 * 1000] + [p * 1000 for _, p in pred_12s]
+    y_lo = float(min(s.min() for s in stack))
+    y_hi = float(max(s.max() for s in stack))
+    pad = 0.05 * (y_hi - y_lo + 1e-6)
+    ylim = (y_lo - pad, y_hi + pad)
+
+    colors = ['C0', 'C1', 'C2', 'C3']
+
+    # 1) GT only
+    _draw_12lead_grid(
+        time_ms,
+        [('simulation GT', 'k', '-', 3.0, true_12)],
+        case_name, ylim,
+        os.path.join(outdir, f'ecg_{case_name}_GT.svg'))
+
+    # 2) Each pipeline alone
+    for ci, (lbl, pred_12) in enumerate(pred_12s):
+        safe = lbl.replace(' ', '_')
+        _draw_12lead_grid(
+            time_ms,
+            [(lbl, colors[ci], '-', 3.0, pred_12)],
+            case_name, ylim,
+            os.path.join(outdir, f'ecg_{case_name}_{safe}.svg'))
+
+    # 3) Combined (GT + all pipelines), no embedded legend
+    traces = [('simulation GT', 'k', '-', 3.0, true_12)]
+    for ci, (lbl, pred_12) in enumerate(pred_12s):
+        traces.append((lbl, colors[ci], '--', 2.5, pred_12))
+    _draw_12lead_grid(
+        time_ms, traces, case_name, ylim,
+        os.path.join(outdir, f'ecg_{case_name}_combined.svg'))
+
+    print(f"  Saved 4 SVGs for {case_name} (GT, per-pipeline, combined)")
+
+
+def plot_summary_bars(pcc_results, outdir):
+    """
+    pcc_results: list of (label, pcc_10 array, pcc_12 array).
+    Side-by-side mean PCC bars with std error bars. SVG, no gridlines.
+    """
+    labels = [r[0] for r in pcc_results]
     x = np.arange(len(labels))
     width = 0.35
 
-    mean10 = [r[1].mean() for r in results]
-    std10  = [r[1].std()  for r in results]
-    mean12 = [r[2].mean() for r in results]
-    std12  = [r[2].std()  for r in results]
+    mean10 = [r[1].mean() for r in pcc_results]
+    std10  = [r[1].std()  for r in pcc_results]
+    mean12 = [r[2].mean() for r in pcc_results]
+    std12  = [r[2].std()  for r in pcc_results]
 
     fig, ax = plt.subplots(figsize=(7, 4))
-    b1 = ax.bar(x - width/2, mean10, width, yerr=std10,
-                label='10-elec Rel L2', capsize=4, alpha=0.8)
-    b2 = ax.bar(x + width/2, mean12, width, yerr=std12,
-                label='12-lead Rel L2', capsize=4, alpha=0.8)
+    fig.patch.set_alpha(0.0)
+    ax.patch.set_alpha(0.0)
+    ax.bar(x - width/2, mean10, width, yerr=std10,
+           capsize=4, alpha=0.8)
+    ax.bar(x + width/2, mean12, width, yerr=std12,
+           capsize=4, alpha=0.8)
     ax.set_xticks(x)
     ax.set_xticklabels(labels, fontsize=9)
-    ax.set_ylabel('Relative L2 error')
-    ax.set_title('ECG prediction — pipeline comparison')
-    ax.legend()
-    ax.grid(True, alpha=0.3, axis='y')
+    ax.set_ylabel('Pearson correlation coefficient')
     plt.tight_layout()
-    fname = os.path.join(outdir, 'pipeline_comparison.png')
-    plt.savefig(fname, dpi=150)
+    fname = os.path.join(outdir, 'pipeline_comparison.svg')
+    plt.savefig(fname, format='svg', bbox_inches='tight', transparent=True)
     plt.close()
     print(f"  Saved {fname}")
 
@@ -401,29 +476,66 @@ def main():
 
     # ── Metrics ────────────────────────────────────────────────────────────
     results = []
-    l2A_10, l2A_12 = per_case_metrics(ecg_A, ecg_test_raw, test_names,
-                                       'A: ECG_transfer(GT V_m) — upper bound')
+    l1_results = []
+    pcc_results = []
+    l1A_10, l1A_12, l2A_10, l2A_12, pccA_10, pccA_12 = per_case_metrics(
+        ecg_A, ecg_test_raw, test_names,
+        'A: ECG_transfer(GT V_m) vs GT — upper bound')
     results.append(('A: Transfer\n(GT V_m)', l2A_10, l2A_12))
+    l1_results.append(('A vs GT', l1A_10, l1A_12))
+    pcc_results.append(('A vs GT', pccA_10, pccA_12))
 
-    l2B_10, l2B_12 = per_case_metrics(ecg_B, ecg_test_raw, test_names,
-                                       'B: ECG_transfer(Geo-DONet V_m) — chain')
+    l1B_10, l1B_12, l2B_10, l2B_12, pccB_10, pccB_12 = per_case_metrics(
+        ecg_B, ecg_test_raw, test_names,
+        'B: ECG_transfer(Geo-DONet V_m) vs GT — chain')
     results.append(('B: Transfer\n(GeoDONet)', l2B_10, l2B_12))
+    l1_results.append(('B (Chain) vs GT', l1B_10, l1B_12))
+    pcc_results.append(('B (Chain) vs GT', pccB_10, pccB_12))
+
+    # Chain (B) compared directly against the ECG Transfer upper bound (A)
+    l1BA_10, l1BA_12, l2BA_10, l2BA_12, pccBA_10, pccBA_12 = per_case_metrics(
+        ecg_B, ecg_A, test_names,
+        'B (Chain) vs A (ECG_transfer upper bound)')
+    l1_results.append(('B (Chain) vs A', l1BA_10, l1BA_12))
+    pcc_results.append(('B (Chain) vs A', pccBA_10, pccBA_12))
 
     if ecg_C is not None:
-        l2C_10, l2C_12 = per_case_metrics(ecg_C, ecg_test_raw, test_names,
-                                           'C: Geo-DONet-ECG — joint model')
+        l1C_10, l1C_12, l2C_10, l2C_12, pccC_10, pccC_12 = per_case_metrics(
+            ecg_C, ecg_test_raw, test_names,
+            'C: Geo-DONet-ECG vs GT — joint model')
         results.append(('C: Joint\nGeoDONet-ECG', l2C_10, l2C_12))
+        l1_results.append(('C vs GT', l1C_10, l1C_12))
+        pcc_results.append(('C vs GT', pccC_10, pccC_12))
 
     # ── Summary ────────────────────────────────────────────────────────────
-    print(f"\n{'═'*50}")
-    print(f"  SUMMARY (mean ± std, {num_test} test cases)")
-    print(f"{'═'*50}")
-    print(f"  {'Pipeline':<28} {'10-elec':>10} {'12-lead':>10}")
-    print(f"  {'─'*48}")
+    print(f"\n{'═'*60}")
+    print(f"  SUMMARY — Rel L1 (mean ± std, {num_test} test cases)")
+    print(f"{'═'*60}")
+    print(f"  {'Comparison':<28} {'10-elec':>12} {'12-lead':>12}")
+    print(f"  {'─'*54}")
+    for lbl, a10, a12 in l1_results:
+        print(f"  {lbl:<28} {np.mean(a10):6.4f}±{np.std(a10):.4f}"
+              f"  {np.mean(a12):6.4f}±{np.std(a12):.4f}")
+
+    print(f"\n{'═'*60}")
+    print(f"  SUMMARY — Rel L2 (mean ± std, {num_test} test cases)")
+    print(f"{'═'*60}")
+    print(f"  {'Pipeline':<28} {'10-elec':>12} {'12-lead':>12}")
+    print(f"  {'─'*54}")
     for lbl, r10, r12 in results:
         lbl_short = lbl.replace('\n', ' ')
         print(f"  {lbl_short:<28} {np.mean(r10):6.4f}±{np.std(r10):.4f}"
               f"  {np.mean(r12):6.4f}±{np.std(r12):.4f}")
+
+    print(f"\n{'═'*60}")
+    print(f"  SUMMARY — PCC (lead-mean Pearson r, {num_test} test cases)")
+    print(f"{'═'*60}")
+    print(f"  {'Comparison':<28} {'10-elec':>12} {'12-lead':>12}")
+    print(f"  {'─'*54}")
+    for lbl, c10, c12 in pcc_results:
+        print(f"  {lbl:<28} {np.mean(c10):6.4f}±{np.std(c10):.4f}"
+              f"  {np.mean(c12):6.4f}±{np.std(c12):.4f}")
+
     print(f"\n  V_m error (Geo-DONet): {np.mean(vm_l2):.4f} ± {np.std(vm_l2):.4f}")
 
     geo_total = sum(geo_times)
@@ -442,27 +554,37 @@ def main():
     num_viz = min(3, num_test)
     for h in range(num_viz):
         pipelines = [
-            ('A: Transfer(GT)', ecg_A[h]),
-            ('B: Transfer(Chain)', ecg_B[h]),
+            ('ECG Transfer', ecg_A[h]),
+            ('Chain', ecg_B[h]),
         ]
         if ecg_C is not None:
             pipelines.append(('C: Joint', ecg_C[h]))
         plot_ecg_comparison(time_ms, ecg_test_raw[h], pipelines,
                             test_names[h], args.outdir)
 
-    plot_summary_bars(results, args.outdir)
+    plot_summary_bars(pcc_results, args.outdir)
 
     # ── Save results ───────────────────────────────────────────────────────
     save_dict = dict(
         ecg_gt=ecg_test_raw, ecg_A=ecg_A, ecg_B=ecg_B,
         vm_pred=vm_pred_phy, vm_gt=vm_test_raw,
+        l1_10_A=l1A_10, l1_12_A=l1A_12,
+        l1_10_B=l1B_10, l1_12_B=l1B_12,
+        l1_10_BA=l1BA_10, l1_12_BA=l1BA_12,
         l2_10_A=l2A_10, l2_12_A=l2A_12,
         l2_10_B=l2B_10, l2_12_B=l2B_12,
+        l2_10_BA=l2BA_10, l2_12_BA=l2BA_12,
+        pcc_10_A=pccA_10, pcc_12_A=pccA_12,
+        pcc_10_B=pccB_10, pcc_12_B=pccB_12,
+        pcc_10_BA=pccBA_10, pcc_12_BA=pccBA_12,
         vm_l2=np.array(vm_l2),
         case_names=test_names, time_ms=time_ms,
     )
     if ecg_C is not None:
-        save_dict.update(ecg_C=ecg_C, l2_10_C=l2C_10, l2_12_C=l2C_12)
+        save_dict.update(ecg_C=ecg_C,
+                         l1_10_C=l1C_10, l1_12_C=l1C_12,
+                         l2_10_C=l2C_10, l2_12_C=l2C_12,
+                         pcc_10_C=pccC_10, pcc_12_C=pccC_12)
 
     np.savez_compressed(os.path.join(args.outdir, 'chain_results.npz'), **save_dict)
     print(f"  Saved {args.outdir}/chain_results.npz")

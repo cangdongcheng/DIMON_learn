@@ -58,7 +58,7 @@ def main():
     dim_br_geo = [num_geomode, 200, 200, 200, 200]
     dim_tr = [4, 200, 200, 200, 200]  # 4D Cobiveco trunk
 
-    batch_size = 48
+    batch_size = 96
     learning_rate = 0.0005
 
     save_directory = f'cobiveco_{normalize}norm_{epochs}ep_{learning_rate}lr'
