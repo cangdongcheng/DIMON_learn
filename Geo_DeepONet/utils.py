@@ -16,6 +16,13 @@ def ParseArgument():
                         help='save_step (default: 10000)')
     parser.add_argument('--test-model', type=int, default=0, metavar='N',
                         help='default training, testing as 1')
+    parser.add_argument('--ckpt-path', type=str, default=None,
+                        help='path to checkpoint (.pt) for --test-model 1; '
+                             'default: derived from epochs/lr')
+    parser.add_argument('--viz-hearts', type=int, default=2,
+                        help='number of hearts to plot from train/test (default 2)')
+    parser.add_argument('--skip-plots', action='store_true',
+                        help='skip 3D scatter rendering (metrics only)')
     args = parser.parse_args()
     return args
 

@@ -92,7 +92,7 @@ def main():
     os.makedirs('CheckPts', exist_ok=True)
 
     ## Load data
-    data = np.load(os.path.join(DATA_BASE, "geo_dynet_data.npz"), allow_pickle=True)
+    data = np.load(os.path.join(DATA_BASE, "geo_donet_data_f121.npz"), allow_pickle=True)
     theta = data['theta'][:, :num_geomode].astype(np.float32)
     coords = data['coords'].astype(np.float32)
     vm_all = data['vm'].astype(np.float32)       # (125, 50797, 121)

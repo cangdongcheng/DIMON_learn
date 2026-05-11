@@ -18,7 +18,7 @@ def final_unit_test(u_data, x_coords, anisotropy):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
     # 1. Physical Parameters
-    vf, vs, vn = 640.0, 240.0, 240.0
+    vf, vs, vn = 600.0, 240.0, 240.0
     
     # 2. Prepare Data (Using Heart 0, Pacing Site 0)
     # Ensure u_target is not all zeros!

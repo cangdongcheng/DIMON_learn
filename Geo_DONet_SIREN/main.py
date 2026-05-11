@@ -1,17 +1,22 @@
 """
-Geo-DONet: geometry → V_m(x,t) on the canonical reference.
+Geo-DONet (SIREN): geometry → V_m(x,t) on the canonical reference, with a
+SIREN trunk (sin activations) for sharp temporal features.
 
 DeepONet with 1 branch + 1 trunk:
-  - Branch (geometry): theta (N, 60) PCA coefficients → (N, p)
+  - Branch (geometry): theta (N, 60) PCA coefficients → (N, p), Tanh.
   - Trunk (spatiotemporal): (ab, rt, tm, tv, t_norm) — plain 5D, no Fourier
-    features. Trunk input dim = 5 (4 Cobiveco + normalised time).
+    features. SIREN sin activations on every layer.
   - Output: einsum(branch, trunk) → V_m(x,t) on reference mesh (N, M, T).
+
+SIREN expects a smaller learning rate than Tanh — defaults here are 1e-4
+(flat) or 5e-4 → 5e-5 with --lr-schedule. omega_0 is tunable via --omega-0
+(default 30, paper recipe).
 
 Temporal chunking: the full M×T grid (~6M points at 121 frames) is split
 into chunks of T_c frames. The trunk is evaluated per chunk, and the
 branch output is reused across chunks.
 
-Data: geo_donet_data_f121.npz from package_training_data.py
+Data: geo_donet_data_f301.npz (dense 2 ms, from package_training_data.py --frame-step 2)
 
 Evaluation outputs (--test-model 1) — all SVG, transparent background:
   Test/
@@ -54,6 +59,7 @@ import torch
 import time as timer
 import numpy as np
 from torch.utils.data import DataLoader, TensorDataset
+from torch.utils.checkpoint import checkpoint
 from utils import *
 from opnn import *
 import matplotlib.pyplot as plt
@@ -128,6 +134,13 @@ def chunked_forward(model, f_geo, trunk_chunks, M):
     trunk_chunks: list of (M*T_c, 5) precomputed trunk grids on device
     M:            number of spatial nodes
     Returns: (N, M, T)
+
+    Memory note: all chunks' trunk subgraphs stay alive after the loop
+    (outputs[] holds refs into them), peaking at ~30 GB of internal trunk
+    activations on width=300 / 121 frames. SIREN tips this over the 40 GB
+    A100. We checkpoint the trunk evaluation in training mode so internal
+    activations are freed and recomputed in backward (~25 % wall-time hit,
+    ~30 GB freed). Eval mode skips it (no autograd, no benefit).
     """
     N = f_geo.shape[0]
 
@@ -137,7 +150,11 @@ def chunked_forward(model, f_geo, trunk_chunks, M):
     outputs = []
     for xt_chunk in trunk_chunks:
         T_c = xt_chunk.shape[0] // M
-        y_tr = model.encode_trunk(xt_chunk)  # (M*T_c, p)
+        if model.training:
+            y_tr = checkpoint(model.encode_trunk, xt_chunk,
+                              use_reentrant=False)  # (M*T_c, p)
+        else:
+            y_tr = model.encode_trunk(xt_chunk)
         y_out = torch.einsum("np,qp->nq", y_br, y_tr)  # (N, M*T_c)
         outputs.append(y_out.reshape(N, M, T_c))
 
@@ -145,9 +162,9 @@ def chunked_forward(model, f_geo, trunk_chunks, M):
 
 
 def main():
-    args = ParseArgument()
-    set_seed(args.seed)
+    set_seed(42)
 
+    args = ParseArgument()
     device = args.device
     epochs = args.epochs
     test_model = args.test_model
@@ -162,16 +179,19 @@ def main():
     trunk_spatial_dim = 3 if args.trunk == 'xyz' else 4
     dim_tr = [trunk_spatial_dim + 1] + [width] * 4   # trunk: (coords, t)
 
-    learning_rate = 0.001 if args.lr_schedule else 0.0005
+    # SIREN is unstable at the Tanh-baseline LR. Default flat 1e-4; with
+    # --lr-schedule, decay 5e-4 → 5e-5 over the run.
+    learning_rate = 0.0005 if args.lr_schedule else 0.0001
+    omega_0 = args.omega_0
     frame_step = 1  # data already subsampled at packaging time
-    time_chunk_size = 25  # frames per chunk during forward pass
+    time_chunk_size = 10  # frames per chunk during forward pass (was 25;
+                          # halved for 301-frame data to keep trunk-recompute
+                          # peak under A100's 40 GB during backward)
 
     lr_tag = '_lrsched' if args.lr_schedule else ''
     trunk_tag = '' if args.trunk == 'cobiveco' else f'_{args.trunk}'
-    # Seed tag is omitted for seed=42 to keep the historical run path stable;
-    # any other seed gets an explicit tag so checkpoints don't collide.
-    seed_tag = '' if args.seed == 42 else f'_seed{args.seed}'
-    save_directory = f'geo_donet_{epochs}ep_w{width}{lr_tag}{trunk_tag}{seed_tag}'
+    omega_tag = f'_w0_{omega_0:g}'
+    save_directory = f'geo_donet_siren_{epochs}ep_w{width}{omega_tag}{lr_tag}{trunk_tag}_f301'
 
     dump_test = f'./Predictions/{save_directory}/Test/'
     dump_train = f'./Predictions/{save_directory}/Train/'
@@ -181,10 +201,10 @@ def main():
     os.makedirs('CheckPts', exist_ok=True)
 
     ## Load Dataset
-    data_path = os.path.join(DATA_BASE, "geo_donet_data_f121.npz")
+    data_path = os.path.join(DATA_BASE, "geo_donet_data_f301.npz")
     if not os.path.exists(data_path):
         print(f"ERROR: {data_path} not found.")
-        print("Run: python package_training_data.py --frame-step 5")
+        print("Run: python package_training_data.py --frame-step 2")
         return
 
     dataset = np.load(data_path, allow_pickle=True)
@@ -268,7 +288,7 @@ def main():
                                            time_chunk_size, device)
     print(f"  {len(trunk_chunks)} chunks, {sum(c.shape[0] for c in trunk_chunks)} total trunk points")
 
-    model = opnn(dim_br_geo, dim_tr).to(device)
+    model = opnn(dim_br_geo, dim_tr, omega_0=omega_0).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
     if args.lr_schedule:
@@ -278,7 +298,9 @@ def main():
                              total_iters=epochs)
 
     n_params = sum(p.numel() for p in model.parameters())
-    print(f"Model: geo {dim_br_geo}, trunk {dim_tr}, params {n_params:,}")
+    print(f"Model: geo {dim_br_geo}, trunk {dim_tr} (SIREN, omega_0={omega_0}), "
+          f"params {n_params:,}")
+    print(f"LR: {learning_rate} ({'scheduled' if args.lr_schedule else 'flat'})")
     print(f"Temporal chunks: {time_chunk_size} frames/chunk")
 
     if test_model == 0:

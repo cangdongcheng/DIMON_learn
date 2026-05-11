@@ -340,7 +340,7 @@ def main():
 
     # ── Load data ──────────────────────────────────────────────────────────
     print("Loading data...")
-    data = np.load(os.path.join(DATA_BASE, 'geo_dynet_data.npz'), allow_pickle=True)
+    data = np.load(os.path.join(DATA_BASE, 'geo_donet_data_f121.npz'), allow_pickle=True)
     theta   = data['theta'][:, :60].astype(np.float32)   # (125, 60)
     coords  = data['coords'].astype(np.float32)           # (50797, 4)
     vm_all  = data['vm'].astype(np.float32)               # (125, 50797, 121)

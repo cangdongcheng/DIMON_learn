@@ -1,0 +1,68 @@
+=== START Thu Apr 30 19:09:16 +08 2026 ===
+Node: x1000c1s1b0n0
+Thu Apr 30 19:09:16 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 550.163.01             Driver Version: 550.163.01     CUDA Version: 12.4     |
+|-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA A100-SXM4-40GB          On  |   00000000:41:00.0 Off |                    0 |
+| N/A   42C    P0             55W /  400W |       1MiB /  40960MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+                                                                                         
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI        PID   Type   Process name                              GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+Trunk: 4D Cobiveco (ab, rt, tm, tv)
+Data: 125 cases, 50797 nodes, 121 time steps
+Time range: [0, 600] ms, step=5 ms
+Split: 95 train / 5 val / 25 test
+Precomputing trunk chunks...
+  5 chunks, 6146437 total trunk points
+Model: geo [60, 300, 300, 300, 300], trunk [5, 300, 300, 300, 300] (SIREN, omega_0=30.0), params 561,901
+LR: 0.0001 (flat)
+Temporal chunks: 25 frames/chunk
+--- Starting Training ---
+Traceback (most recent call last):
+  File "/home/users/nus/e1590340/cardiac_simulation/DIMON/Geo_DONet_SIREN/main.py", line 665, in <module>
+    main()
+    ~~~~^^
+  File "/home/users/nus/e1590340/cardiac_simulation/DIMON/Geo_DONet_SIREN/main.py", line 314, in main
+    pred = chunked_forward(model, b_f, trunk_chunks, n_pts)
+  File "/home/users/nus/e1590340/cardiac_simulation/DIMON/Geo_DONet_SIREN/main.py", line 145, in chunked_forward
+    y_tr = model.encode_trunk(xt_chunk)  # (M*T_c, p)
+  File "/home/users/nus/e1590340/cardiac_simulation/DIMON/Geo_DONet_SIREN/opnn.py", line 79, in encode_trunk
+    return self._trunk(xt)
+           ~~~~~~~~~~~^^^^
+  File "/app/apps/pytorch/2.6.0-py3-cu11.8/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/app/apps/pytorch/2.6.0-py3-cu11.8/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/app/apps/pytorch/2.6.0-py3-cu11.8/lib/python3.13/site-packages/torch/nn/modules/container.py", line 250, in forward
+    input = module(input)
+  File "/app/apps/pytorch/2.6.0-py3-cu11.8/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/app/apps/pytorch/2.6.0-py3-cu11.8/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/users/nus/e1590340/cardiac_simulation/DIMON/Geo_DONet_SIREN/opnn.py", line 41, in forward
+    return torch.sin(self.omega_0 * self.linear(x))
+                                    ~~~~~~~~~~~^^^
+  File "/app/apps/pytorch/2.6.0-py3-cu11.8/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/app/apps/pytorch/2.6.0-py3-cu11.8/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/app/apps/pytorch/2.6.0-py3-cu11.8/lib/python3.13/site-packages/torch/nn/modules/linear.py", line 125, in forward
+    return F.linear(input, self.weight, self.bias)
+           ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 1.42 GiB. GPU 0 has a total capacity of 39.56 GiB of which 1.07 GiB is free. Including non-PyTorch memory, this process has 38.47 GiB memory in use. Of the allocated memory 37.96 GiB is allocated by PyTorch, and 29.10 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
+=== DONE Thu Apr 30 19:10:10 +08 2026 ===

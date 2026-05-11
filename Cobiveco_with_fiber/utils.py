@@ -25,6 +25,15 @@ def ParseArgument():
     #                     help = 'batch_size (default: 1000000)')
     parser.add_argument('--test-model', type=int, default=0, metavar='N',
                         help = 'default training, testing as 1')
+    parser.add_argument('--ckpt-path', type=str, default=None,
+                        help='path to checkpoint (.pt) for --test-model 1; '
+                             'default: derived from epochs/lr')
+    parser.add_argument('--viz-hearts', type=int, default=2,
+                        help='number of hearts to plot from train/test (default 2)')
+    parser.add_argument('--viz-sims', type=int, default=3,
+                        help='number of pacing sims to plot per heart (default 3, max 9)')
+    parser.add_argument('--skip-plots', action='store_true',
+                        help='skip 3D scatter + KDE rendering (metrics only)')
 
     args = parser.parse_args()
     return args

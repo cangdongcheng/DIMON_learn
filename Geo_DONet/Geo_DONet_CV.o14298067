@@ -1,0 +1,189 @@
+=== START Mon May  4 16:35:06 +08 2026 ===
+Node: x1000c0s4b0n1
+Mon May  4 16:35:06 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 550.163.01             Driver Version: 550.163.01     CUDA Version: 12.4     |
+|-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA A100-SXM4-40GB          On  |   00000000:C1:00.0 Off |                    0 |
+| N/A   41C    P0             54W /  400W |       1MiB /  40960MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+                                                                                         
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI        PID   Type   Process name                              GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+Save dir: CV_5fold_5000ep_w300_lrsched
+Trunk: 4D Cobiveco (ab, rt, tm, tv)
+Data: 125 hearts, 50797 nodes, 121 frames, dt=5 ms
+5-fold CV, 5000 epochs/fold, width=300, lr_schedule=True
+
+=== Fold 0 ===
+  Train: 95, Val: 5, Test: 25
+  Fold 0 Epoch 0/5000: val=1.701884 best=1.701884 ETA 483m42s
+  Fold 0 Epoch 200/5000: val=0.104332 best=0.101731 ETA 333m7s
+  Fold 0 Epoch 400/5000: val=0.058917 best=0.058575 ETA 318m58s
+  Fold 0 Epoch 600/5000: val=0.055963 best=0.050240 ETA 305m1s
+  Fold 0 Epoch 800/5000: val=0.045910 best=0.045620 ETA 291m7s
+  Fold 0 Epoch 1000/5000: val=0.044817 best=0.043260 ETA 277m14s
+  Fold 0 Epoch 1200/5000: val=0.045001 best=0.040923 ETA 263m22s
+  Fold 0 Epoch 1400/5000: val=0.040842 best=0.039477 ETA 249m29s
+  Fold 0 Epoch 1600/5000: val=0.125142 best=0.038831 ETA 235m37s
+  Fold 0 Epoch 1800/5000: val=0.084632 best=0.038831 ETA 221m44s
+  Fold 0 Epoch 2000/5000: val=0.071555 best=0.038831 ETA 207m53s
+  Fold 0 Epoch 2200/5000: val=0.063852 best=0.038831 ETA 194m1s
+  Fold 0 Epoch 2400/5000: val=0.055889 best=0.038831 ETA 180m9s
+  Fold 0 Epoch 2600/5000: val=0.051940 best=0.038831 ETA 166m17s
+  Fold 0 Epoch 2800/5000: val=0.055034 best=0.038831 ETA 152m25s
+  Fold 0 Epoch 3000/5000: val=0.046371 best=0.038831 ETA 138m33s
+  Fold 0 Epoch 3200/5000: val=0.045847 best=0.038831 ETA 124m41s
+  Fold 0 Epoch 3400/5000: val=0.042583 best=0.038831 ETA 110m49s
+  Fold 0 Epoch 3600/5000: val=0.042327 best=0.038831 ETA 96m57s
+  Fold 0 Epoch 3800/5000: val=0.039505 best=0.037359 ETA 83m6s
+  Fold 0 Epoch 4000/5000: val=0.036528 best=0.036214 ETA 69m14s
+  Fold 0 Epoch 4200/5000: val=0.037002 best=0.035253 ETA 55m22s
+  Fold 0 Epoch 4400/5000: val=0.035598 best=0.034985 ETA 41m30s
+  Fold 0 Epoch 4600/5000: val=0.036677 best=0.034361 ETA 27m39s
+  Fold 0 Epoch 4800/5000: val=0.035364 best=0.033985 ETA 13m47s
+  Fold 0: V_m L2=0.1548 ± 0.0206, MAE=4.59 ± 0.94 mV  AT L2=0.0988 ± 0.0265, MAE=6.22 ± 1.49 ms  (346 min)
+
+=== Fold 1 ===
+  Train: 95, Val: 5, Test: 25
+  Fold 1 Epoch 0/5000: val=1.887882 best=1.887882 ETA 588m7s
+  Fold 1 Epoch 200/5000: val=0.130115 best=0.130115 ETA 334m6s
+  Fold 1 Epoch 400/5000: val=0.067337 best=0.065899 ETA 319m35s
+  Fold 1 Epoch 600/5000: val=0.056739 best=0.053506 ETA 305m30s
+  Fold 1 Epoch 800/5000: val=0.049698 best=0.047379 ETA 291m30s
+  Fold 1 Epoch 1000/5000: val=0.044758 best=0.044302 ETA 277m35s
+  Fold 1 Epoch 1200/5000: val=0.042333 best=0.041010 ETA 263m39s
+  Fold 1 Epoch 1400/5000: val=0.043486 best=0.038731 ETA 249m45s
+  Fold 1 Epoch 1600/5000: val=0.037762 best=0.036805 ETA 235m51s
+  Fold 1 Epoch 1800/5000: val=0.044592 best=0.035402 ETA 221m58s
+  Fold 1 Epoch 2000/5000: val=0.037194 best=0.033879 ETA 208m5s
+  Fold 1 Epoch 2200/5000: val=0.035407 best=0.032843 ETA 194m12s
+  Fold 1 Epoch 2400/5000: val=0.032519 best=0.032150 ETA 180m19s
+  Fold 1 Epoch 2600/5000: val=0.033221 best=0.031528 ETA 166m26s
+  Fold 1 Epoch 2800/5000: val=0.031260 best=0.030971 ETA 152m33s
+  Fold 1 Epoch 3000/5000: val=0.031463 best=0.030229 ETA 138m41s
+  Fold 1 Epoch 3200/5000: val=0.032143 best=0.030120 ETA 124m48s
+  Fold 1 Epoch 3400/5000: val=0.030787 best=0.029521 ETA 110m55s
+  Fold 1 Epoch 3600/5000: val=0.030275 best=0.029345 ETA 97m3s
+  Fold 1 Epoch 3800/5000: val=0.030550 best=0.029344 ETA 83m10s
+  Fold 1 Epoch 4000/5000: val=0.030106 best=0.029092 ETA 69m18s
+  Fold 1 Epoch 4200/5000: val=0.030543 best=0.029092 ETA 55m25s
+  Fold 1 Epoch 4400/5000: val=0.030225 best=0.029092 ETA 41m33s
+  Fold 1 Epoch 4600/5000: val=0.029738 best=0.028797 ETA 27m40s
+  Fold 1 Epoch 4800/5000: val=0.030664 best=0.028797 ETA 13m48s
+  Fold 1: V_m L2=0.1516 ± 0.0160, MAE=4.57 ± 0.92 mV  AT L2=0.0827 ± 0.0135, MAE=5.33 ± 0.82 ms  (346 min)
+
+=== Fold 2 ===
+  Train: 95, Val: 5, Test: 25
+  Fold 2 Epoch 0/5000: val=1.456996 best=1.456996 ETA 1028m44s
+  Fold 2 Epoch 200/5000: val=0.108901 best=0.108901 ETA 335m46s
+  Fold 2 Epoch 400/5000: val=0.063810 best=0.062366 ETA 320m11s
+  Fold 2 Epoch 600/5000: val=0.048908 best=0.047656 ETA 305m44s
+  Fold 2 Epoch 800/5000: val=0.046175 best=0.042672 ETA 291m34s
+  Fold 2 Epoch 1000/5000: val=0.040782 best=0.039047 ETA 277m32s
+  Fold 2 Epoch 1200/5000: val=1.781276 best=0.037608 ETA 263m33s
+  Fold 2 Epoch 1400/5000: val=0.048985 best=0.037608 ETA 249m37s
+  Fold 2 Epoch 1600/5000: val=0.043077 best=0.037608 ETA 235m42s
+  Fold 2 Epoch 1800/5000: val=0.041693 best=0.037608 ETA 221m48s
+  Fold 2 Epoch 2000/5000: val=0.042251 best=0.037608 ETA 207m55s
+  Fold 2 Epoch 2200/5000: val=0.037360 best=0.036931 ETA 194m1s
+  Fold 2 Epoch 2400/5000: val=0.037043 best=0.035721 ETA 180m9s
+  Fold 2 Epoch 2600/5000: val=0.036586 best=0.034866 ETA 166m16s
+  Fold 2 Epoch 2800/5000: val=0.034621 best=0.033775 ETA 152m24s
+  Fold 2 Epoch 3000/5000: val=0.034864 best=0.032830 ETA 138m32s
+  Fold 2 Epoch 3200/5000: val=0.034448 best=0.032137 ETA 124m40s
+  Fold 2 Epoch 3400/5000: val=0.034131 best=0.031541 ETA 110m48s
+  Fold 2 Epoch 3600/5000: val=0.032838 best=0.031240 ETA 96m56s
+  Fold 2 Epoch 3800/5000: val=0.033300 best=0.031224 ETA 83m4s
+  Fold 2 Epoch 4000/5000: val=0.033664 best=0.031224 ETA 69m13s
+  Fold 2 Epoch 4200/5000: val=0.035753 best=0.031224 ETA 55m21s
+  Fold 2 Epoch 4400/5000: val=0.035810 best=0.031224 ETA 41m30s
+  Fold 2 Epoch 4600/5000: val=0.036234 best=0.031224 ETA 27m38s
+  Fold 2 Epoch 4800/5000: val=0.038975 best=0.031224 ETA 13m47s
+  Fold 2: V_m L2=0.1704 ± 0.0319, MAE=5.83 ± 2.69 mV  AT L2=0.0975 ± 0.0201, MAE=6.32 ± 1.09 ms  (346 min)
+
+=== Fold 3 ===
+  Train: 95, Val: 5, Test: 25
+  Fold 3 Epoch 0/5000: val=1.852394 best=1.852394 ETA 688m11s
+  Fold 3 Epoch 200/5000: val=0.172126 best=0.141589 ETA 332m12s
+  Fold 3 Epoch 400/5000: val=0.081093 best=0.072018 ETA 317m33s
+  Fold 3 Epoch 600/5000: val=0.055409 best=0.054704 ETA 303m28s
+  Fold 3 Epoch 800/5000: val=0.048957 best=0.048316 ETA 289m34s
+  Fold 3 Epoch 1000/5000: val=0.045237 best=0.045237 ETA 275m44s
+  Fold 3 Epoch 1200/5000: val=0.042652 best=0.042282 ETA 261m54s
+  Fold 3 Epoch 1400/5000: val=0.039983 best=0.039983 ETA 248m5s
+  Fold 3 Epoch 1600/5000: val=0.039344 best=0.038437 ETA 234m17s
+  Fold 3 Epoch 1800/5000: val=0.039327 best=0.036922 ETA 220m29s
+  Fold 3 Epoch 2000/5000: val=0.036500 best=0.035670 ETA 206m41s
+  Fold 3 Epoch 2200/5000: val=0.035835 best=0.034512 ETA 192m54s
+  Fold 3 Epoch 2400/5000: val=0.033738 best=0.033378 ETA 179m7s
+  Fold 3 Epoch 2600/5000: val=0.032543 best=0.032269 ETA 165m20s
+  Fold 3 Epoch 2800/5000: val=0.031492 best=0.031460 ETA 151m32s
+  Fold 3 Epoch 3000/5000: val=0.031940 best=0.030801 ETA 137m45s
+  Fold 3 Epoch 3200/5000: val=0.030215 best=0.030215 ETA 123m58s
+  Fold 3 Epoch 3400/5000: val=0.030722 best=0.029992 ETA 110m11s
+  Fold 3 Epoch 3600/5000: val=0.030632 best=0.029487 ETA 96m24s
+  Fold 3 Epoch 3800/5000: val=0.030050 best=0.029264 ETA 82m37s
+  Fold 3 Epoch 4000/5000: val=0.030141 best=0.029229 ETA 68m50s
+  Fold 3 Epoch 4200/5000: val=0.029740 best=0.029198 ETA 55m3s
+  Fold 3 Epoch 4400/5000: val=0.029736 best=0.028974 ETA 41m16s
+  Fold 3 Epoch 4600/5000: val=0.030005 best=0.028882 ETA 27m29s
+  Fold 3 Epoch 4800/5000: val=0.031552 best=0.028793 ETA 13m42s
+  Fold 3: V_m L2=0.1419 ± 0.0130, MAE=4.12 ± 1.06 mV  AT L2=0.0906 ± 0.0190, MAE=5.78 ± 1.10 ms  (344 min)
+
+=== Fold 4 ===
+  Train: 95, Val: 5, Test: 25
+  Fold 4 Epoch 0/5000: val=1.911308 best=1.911308 ETA 356m12s
+  Fold 4 Epoch 200/5000: val=0.144397 best=0.143632 ETA 332m42s
+  Fold 4 Epoch 400/5000: val=0.079757 best=0.074120 ETA 318m48s
+  Fold 4 Epoch 600/5000: val=0.058335 best=0.057141 ETA 304m55s
+  Fold 4 Epoch 800/5000: val=0.051015 best=0.050685 ETA 291m3s
+  Fold 4 Epoch 1000/5000: val=0.047454 best=0.046628 ETA 277m12s
+  Fold 4 Epoch 1200/5000: val=0.046616 best=0.044545 ETA 263m19s
+  Fold 4 Epoch 1400/5000: val=0.041993 best=0.041165 ETA 249m28s
+  Fold 4 Epoch 1600/5000: val=0.039561 best=0.039035 ETA 235m36s
+  Fold 4 Epoch 1800/5000: val=0.036848 best=0.036699 ETA 221m44s
+  Fold 4 Epoch 2000/5000: val=0.035073 best=0.035073 ETA 207m52s
+  Fold 4 Epoch 2200/5000: val=0.033509 best=0.033509 ETA 194m0s
+  Fold 4 Epoch 2400/5000: val=0.032320 best=0.032320 ETA 180m8s
+  Fold 4 Epoch 2600/5000: val=0.032013 best=0.031573 ETA 166m17s
+  Fold 4 Epoch 2800/5000: val=0.031083 best=0.030866 ETA 152m25s
+  Fold 4 Epoch 3000/5000: val=0.031193 best=0.030416 ETA 138m33s
+  Fold 4 Epoch 3200/5000: val=0.031444 best=0.030158 ETA 124m41s
+  Fold 4 Epoch 3400/5000: val=0.030894 best=0.029931 ETA 110m49s
+  Fold 4 Epoch 3600/5000: val=0.030146 best=0.029523 ETA 96m58s
+  Fold 4 Epoch 3800/5000: val=0.030131 best=0.029501 ETA 83m6s
+  Fold 4 Epoch 4000/5000: val=0.033489 best=0.029501 ETA 69m14s
+  Fold 4 Epoch 4200/5000: val=0.030550 best=0.029301 ETA 55m22s
+  Fold 4 Epoch 4400/5000: val=0.031637 best=0.029301 ETA 41m31s
+  Fold 4 Epoch 4600/5000: val=0.030708 best=0.029301 ETA 27m39s
+  Fold 4 Epoch 4800/5000: val=0.032609 best=0.029301 ETA 13m47s
+  Fold 4: V_m L2=0.1482 ± 0.0208, MAE=4.09 ± 0.95 mV  AT L2=0.1012 ± 0.0195, MAE=6.52 ± 1.19 ms  (346 min)
+
+=================================================================
+5-fold pooled (N=125 cases):
+  V_m  Rel L2 = 0.1534 ± 0.0235
+  V_m  MAE    = 4.64 ± 1.61 mV
+  AT   Rel L2 = 0.0942 ± 0.0212
+  AT   MAE    = 6.03 ± 1.23 ms
+
+Per-fold:
+  Fold 0: V_m L2=0.1548 ± 0.0206, AT L2=0.0988 ± 0.0265, 346 min
+  Fold 1: V_m L2=0.1516 ± 0.0160, AT L2=0.0827 ± 0.0135, 346 min
+  Fold 2: V_m L2=0.1704 ± 0.0319, AT L2=0.0975 ± 0.0201, 346 min
+  Fold 3: V_m L2=0.1419 ± 0.0130, AT L2=0.0906 ± 0.0190, 344 min
+  Fold 4: V_m L2=0.1482 ± 0.0208, AT L2=0.1012 ± 0.0195, 346 min
+
+Total time: 1731 min
+Saved CV_5fold_5000ep_w300_lrsched/cv_results.npz
+=== DONE Tue May  5 21:27:27 +08 2026 ===

@@ -2,6 +2,41 @@
 Dongcheng Cang, dccang@u.nus.edu
 Final Integrated DIMON Implementation: 3D Stacked Logic
 Mesh Nodes: 50797 | Hearts: 125 | Paces: 9
+
+3-branch MIONet (geo + pacing + 4D Cobiveco trunk) predicting Eikonal
+activation times. Output: (N, 9, M).
+
+Evaluation outputs (--test-model 1) — all SVG, transparent background:
+  Test/  heart{h}_sim{s}_AT_{GT,Pred,AbsErr}.svg   — 3D AT scatters (rasterised)
+         colorbars/cbar_{AT,AT_AbsErr}.svg          — standalone shared colorbars
+         combined_error_distribution.svg            — KDE over all test hearts
+         test_predictions.npz                       — pred + true + L2/MAE matrices
+  Train/ heart{h}_sim{s}_AT_{GT,Pred,AbsErr}.svg   — same, on first --viz-hearts train cases
+
+Shared AT color scale across all viz (heart, sim) pairs. 3D scatters are
+rasterised inside the SVG at 300 dpi and rendered in parallel across up to
+8 processes. Per-pacing and pooled metrics printed in mean ± std format.
+
+Eval-time flags:
+    --viz-hearts N    hearts to plot from train & test (default 2)
+    --viz-sims N      pacing sims per heart (default 3, max 9)
+    --skip-plots      skip scatter + KDE rendering (metrics only)
+    --ckpt-path PATH  override checkpoint path (default: derived from args)
+
+Usage:
+    source ~/load_dimon_env.sh
+    cd DIMON/Cobiveco_with_fiber
+
+    # Train
+    python main.py --epochs 50000 --device cuda
+
+    # Evaluate saved model (matches save_directory → checkpoint)
+    python main.py --test-model 1 --device cuda --epochs 10000
+
+    # Metrics only (skip plots), explicit checkpoint
+    python main.py --test-model 1 --device cuda --epochs 10000 \
+        --ckpt-path CheckPts/model_chkpts_cobiveco4d_1norm_10000ep_0.0005lr.pt \
+        --skip-plots
 """
 
 import os
@@ -13,6 +48,36 @@ from utils import *
 from opnn import *
 import matplotlib.pyplot as plt
 import random
+from concurrent.futures import ProcessPoolExecutor
+
+
+# ── Module-level worker for parallel 3D scatter rendering ──────────────────
+_WORKER_XYZ = None
+
+
+def _init_plot_worker(xyz):
+    global _WORKER_XYZ
+    _WORKER_XYZ = xyz
+    import matplotlib
+    matplotlib.use('Agg')
+
+
+def _render_scatter_svg(task):
+    values, cmap, vmin, vmax, out_path = task
+    import matplotlib.pyplot as plt
+    fig = plt.figure(figsize=(6, 6))
+    fig.patch.set_alpha(0.0)
+    ax = fig.add_subplot(111, projection='3d')
+    ax.patch.set_alpha(0.0)
+    ax.scatter(_WORKER_XYZ[:, 0], _WORKER_XYZ[:, 1], _WORKER_XYZ[:, 2],
+               c=values, cmap=cmap, s=1,
+               vmin=vmin, vmax=vmax, rasterized=True)
+    ax.set_axis_off()
+    plt.tight_layout()
+    plt.savefig(out_path, format='svg', dpi=300, bbox_inches='tight',
+                transparent=True)
+    plt.close()
+
 
 def set_seed(seed=42):
     torch.manual_seed(seed)
@@ -44,7 +109,7 @@ def main():
 
     dump_test = f'./Predictions/{save_directory}/Test/'
     dump_train = f'./Predictions/{save_directory}/Train/'
-    model_path = f'CheckPts/model_chkpts_{save_directory}.pt'
+    model_path = args.ckpt_path or f'CheckPts/model_chkpts_{save_directory}.pt'
     os.makedirs(dump_test, exist_ok=True)
     os.makedirs(dump_train, exist_ok=True)
     os.makedirs('CheckPts', exist_ok=True)
@@ -184,167 +249,220 @@ def main():
         print(f"Saved loss curve to Predictions/{save_directory}/loss_curve.png")
 
     else:
-        # --- 5. Evaluation for both Training and Test Sets ---
+        # --- Evaluation ---
         checkpoint = torch.load(model_path, map_location=device, weights_only=True)
         model.load_state_dict(checkpoint['model_state_dict'])
         model.eval()
 
-        print("--- Generating 3D Evaluation Visualizations (All Pacing Sites) ---")
-        num_viz_hearts = 2  # As requested: first 2 test cases
-        num_sims = 3        # All simulations by pacing
-            
+        print("--- Generating Evaluation ---")
+        num_viz_hearts = min(args.viz_hearts, num_test_hearts)
+        num_viz_sims = min(args.viz_sims, 9)
+
         with torch.no_grad():
+            # Warm up (first call has overhead)
+            _ = model.forward(f_test_tensor[:1], x_pace_tensor, x_tensor)
+            sync()
+
+            # Per-heart inference timing
+            infer_times = []
+            all_pred = []
+            for i in range(num_test_hearts):
+                sync()
+                t0 = time.perf_counter()
+                y = model.forward(f_test_tensor[i:i + 1], x_pace_tensor, x_tensor)
+                sync()
+                infer_times.append(time.perf_counter() - t0)
+                all_pred.append(to_numpy(y[0]))  # (9, M)
+            u_test_pred = np.stack(all_pred) * u_std_train + u_mean_train
+
+            print(f"Inference: {np.mean(infer_times)*1000:.1f} +/- "
+                  f"{np.std(infer_times)*1000:.1f} ms/case "
+                  f"(total {np.sum(infer_times):.2f} s for {num_test_hearts} hearts × 9 pacings)")
+
+            # Training-set viz predictions
             f_train_subset = f_train_tensor[:num_viz_hearts]
-
-            # Denormalization using strictly training stats (u_std_train, u_mean_train)
-            sync()
-            t0 = time.perf_counter()
-            y_pred_test_raw = model.forward(f_test_tensor, x_pace_tensor, x_tensor)
-            sync()
-            infer_time = time.perf_counter() - t0
-            u_test_pred = to_numpy(y_pred_test_raw) * u_std_train + u_mean_train
-                
-            y_pred_train_raw = model.forward(f_train_subset, x_pace_tensor, x_tensor)
-            u_train_pred = to_numpy(y_pred_train_raw) * u_std_train + u_mean_train
-                
+            y_train = model.forward(f_train_subset, x_pace_tensor, x_tensor)
+            u_train_pred = to_numpy(y_train) * u_std_train + u_mean_train
             u_train_phy = u_train_raw[:num_viz_hearts]
-            u_test_phy_viz = u_test_raw[:num_viz_hearts] 
 
-            def plot_full_comparison(pred_batch, true_batch, folder_name, file_prefix):
-                os.makedirs(folder_name, exist_ok=True)
-                for i in range(num_viz_hearts):
-                    for s in range(num_sims):
-                        u_p = pred_batch[i, s] 
-                        u_t = true_batch[i, s]
-                        
-                        v_min, v_max = min(u_t.min(), u_p.min()), max(u_t.max(), u_p.max())
-                        
-                        fig = plt.figure(figsize=(18, 6))
-                        
-                        ax1 = fig.add_subplot(131, projection='3d')
-                        sc1 = ax1.scatter(cartesian_coords[:, 0], cartesian_coords[:, 1], cartesian_coords[:, 2], 
-                                          c=u_t, cmap='jet', s=1, vmin=v_min, vmax=v_max)
-                        ax1.set_title(f"{file_prefix.capitalize()} Ground Truth (Heart {i}, Sim {s})")
-                        plt.colorbar(sc1, ax=ax1, shrink=0.5)
+        # --- Error statistics (per-pacing + pooled, ± format) ---
+        n_sims = 9
+        l2_mat = np.zeros((num_test_hearts, n_sims))
+        mae_mat = np.zeros((num_test_hearts, n_sims))
+        for i in range(num_test_hearts):
+            for s in range(n_sims):
+                u_p = u_test_pred[i, s]
+                u_t = u_test_raw[i, s]
+                l2_mat[i, s] = np.linalg.norm(u_p - u_t) / np.linalg.norm(u_t)
+                mae_mat[i, s] = np.mean(np.abs(u_p - u_t))
 
-                        ax2 = fig.add_subplot(132, projection='3d')
-                        sc2 = ax2.scatter(cartesian_coords[:, 0], cartesian_coords[:, 1], cartesian_coords[:, 2], 
-                                          c=u_p, cmap='jet', s=1, vmin=v_min, vmax=v_max)
-                        ax2.set_title(f"{file_prefix.capitalize()} Pred (Heart {i}, Sim {s})")
-                        plt.colorbar(sc2, ax=ax2, shrink=0.5)
+        print("\n--- Per-pacing error (mean ± std over test hearts) ---")
+        for s in range(n_sims):
+            print(f"Pacing {s}: L2 = {l2_mat[:, s].mean():.4f} ± "
+                  f"{l2_mat[:, s].std():.4f} | MAE = "
+                  f"{mae_mat[:, s].mean():.4f} ± {mae_mat[:, s].std():.4f} ms")
 
-                        ax3 = fig.add_subplot(133, projection='3d')
-                        err = np.abs(u_t - u_p)
-                        sc3 = ax3.scatter(cartesian_coords[:, 0], cartesian_coords[:, 1], cartesian_coords[:, 2], 
-                                          c=err, cmap='Reds', s=1)
-                        ax3.set_title(f"Abs Error (Mean: {np.mean(err):.2f} ms)")
-                        plt.colorbar(sc3, ax=ax3, shrink=0.5)
+        print("\n--- Pooled ---")
+        print(f"Rel L2 = {l2_mat.mean():.4f} ± {l2_mat.std():.4f} | "
+              f"MAE = {mae_mat.mean():.2f} ± {mae_mat.std():.2f} ms")
 
-                        for ax in [ax1, ax2, ax3]: ax.set_axis_off()
-                        plt.tight_layout()
-                        
-                        plt.savefig(os.path.join(folder_name, f"{file_prefix}_heart{i}_sim{s}.png"), dpi=200)
-                        plt.close()
+        def save_colorbar(cmap, vmin, vmax, label, out_path,
+                          orientation='vertical', half=False):
+            if orientation == 'vertical':
+                figsize = (1.2, 2.5) if half else (1.2, 5)
+            else:
+                figsize = (2.5, 1.2) if half else (5, 1.2)
+            fig, ax = plt.subplots(figsize=figsize)
+            fig.patch.set_alpha(0.0)
+            ax.patch.set_alpha(0.0)
+            norm = plt.Normalize(vmin=vmin, vmax=vmax)
+            sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+            cb = plt.colorbar(sm, cax=ax, orientation=orientation)
+            cb.set_label(label, fontsize=15)
+            from matplotlib.ticker import MaxNLocator
+            nice = MaxNLocator(nbins=3, steps=[1, 2, 2.5, 5, 10]).tick_values(vmin, vmax)
+            nice = nice[(nice >= vmin) & (nice <= vmax)]
+            cb.set_ticks(nice)
+            cb.ax.tick_params(labelsize=15)
+            plt.tight_layout()
+            plt.savefig(out_path, format='svg', bbox_inches='tight',
+                        transparent=True)
+            plt.close()
 
-            print(f"Saving comparison plots to {dump_train} and {dump_test}")
-            #plot_full_comparison(u_train_pred, u_train_phy, dump_train, 'train')
-            #plot_full_comparison(u_test_pred, u_test_phy_viz, dump_test, 'test')
-            print("Multi-simulation 3D evaluation complete.")
+        # --- Plotting ---
+        if args.skip_plots:
+            print("\nSkipping 3D scatter + KDE rendering (--skip-plots)")
+        else:
+            # Individual SVGs — shared AT color scale across all viz instances
+            gt_stack = np.concatenate([
+                u_test_raw[:num_viz_hearts, :num_viz_sims].ravel(),
+                u_train_phy[:, :num_viz_sims].ravel(),
+            ])
+            pr_stack = np.concatenate([
+                u_test_pred[:num_viz_hearts, :num_viz_sims].ravel(),
+                u_train_pred[:, :num_viz_sims].ravel(),
+            ])
+            at_vmin = float(min(gt_stack.min(), pr_stack.min()))
+            at_vmax = float(max(gt_stack.max(), pr_stack.max()))
 
-            # --- 6. Calculate L2 and MAE Errors (Full Test Set) ---
-            print("Calculating Errors for Distribution Plot...")
+            err_stack = np.concatenate([
+                np.abs(u_test_raw[:num_viz_hearts, :num_viz_sims]
+                       - u_test_pred[:num_viz_hearts, :num_viz_sims]).ravel(),
+                np.abs(u_train_phy[:, :num_viz_sims]
+                       - u_train_pred[:, :num_viz_sims]).ravel(),
+            ])
+            err_vmax = float(err_stack.max())
+
+            cmap_at = 'RdYlBu_r'
+            cmap_err = 'Reds'
+
+            plot_tasks = []
+
+            def queue(values, cmap, vmin, vmax, out_path):
+                plot_tasks.append((np.asarray(values, dtype=np.float32),
+                                   cmap, float(vmin), float(vmax), out_path))
+
+            for i in range(num_viz_hearts):
+                for s in range(num_viz_sims):
+                    tag = f"heart{i}_sim{s}"
+                    # Test
+                    err_t = np.abs(u_test_raw[i, s] - u_test_pred[i, s])
+                    queue(u_test_raw[i, s], cmap_at, at_vmin, at_vmax,
+                          os.path.join(dump_test, f"{tag}_AT_GT.svg"))
+                    queue(u_test_pred[i, s], cmap_at, at_vmin, at_vmax,
+                          os.path.join(dump_test, f"{tag}_AT_Pred.svg"))
+                    queue(err_t, cmap_err, 0.0, err_vmax,
+                          os.path.join(dump_test, f"{tag}_AT_AbsErr.svg"))
+                    # Train
+                    err_tr = np.abs(u_train_phy[i, s] - u_train_pred[i, s])
+                    queue(u_train_phy[i, s], cmap_at, at_vmin, at_vmax,
+                          os.path.join(dump_train, f"{tag}_AT_GT.svg"))
+                    queue(u_train_pred[i, s], cmap_at, at_vmin, at_vmax,
+                          os.path.join(dump_train, f"{tag}_AT_Pred.svg"))
+                    queue(err_tr, cmap_err, 0.0, err_vmax,
+                          os.path.join(dump_train, f"{tag}_AT_AbsErr.svg"))
+
+            n_workers = min(8, (os.cpu_count() or 4))
+            print(f"\nRendering {len(plot_tasks)} SVG scatters on "
+                  f"{n_workers} processes ...", flush=True)
+            t0_render = time.perf_counter()
+            with ProcessPoolExecutor(max_workers=n_workers,
+                                     initializer=_init_plot_worker,
+                                     initargs=(cartesian_coords,)) as ex:
+                list(ex.map(_render_scatter_svg, plot_tasks))
+            print(f"  done in {time.perf_counter() - t0_render:.1f} s")
+
+            # Standalone colorbars
+            cbar_dir = os.path.join(dump_test, "colorbars")
+            os.makedirs(cbar_dir, exist_ok=True)
+            save_colorbar(cmap_at, at_vmin, at_vmax, 'AT (ms)',
+                          os.path.join(cbar_dir, 'cbar_AT.svg'))
+            save_colorbar(cmap_err, 0.0, err_vmax, '|ΔAT| (ms)',
+                          os.path.join(cbar_dir, 'cbar_AT_AbsErr.svg'),
+                          half=True)
+            print(f"Saved colorbars to {cbar_dir}")
+
+            # KDE distribution plot (full test set, all pacings)
             import pandas as pd
             import seaborn as sns
-            
-            num_test_hearts = u_test_pred.shape[0]
-            u_test_phy_full = u_test_raw 
-            records = []
-
-            for i in range(num_test_hearts):
-                for s in range(9):
-                    u_p = u_test_pred[i, s]
-                    u_t = u_test_phy_full[i, s]
-                    
-                    l2_err = np.linalg.norm(u_p - u_t) / np.linalg.norm(u_t)
-                    mae_err = np.mean(np.abs(u_p - u_t))
-                    
-                    records.append({'Pacing_ID': s, 'Relative L2 Error': l2_err, 'MAE': mae_err})
-                    
+            records = [{'Pacing_ID': s, 'Relative L2 Error': l2_mat[i, s],
+                        'MAE': mae_mat[i, s]}
+                       for i in range(num_test_hearts) for s in range(n_sims)]
             df = pd.DataFrame(records)
-            
-            print("\n--- Error Statistics (Mean ± Std) ---")
-            stats_df = df.groupby('Pacing_ID').agg({'Relative L2 Error': ['mean', 'std'], 'MAE': ['mean', 'std']})
-            
-            for s in sorted(df['Pacing_ID'].unique()):
-                l2_m = stats_df.loc[s, ('Relative L2 Error', 'mean')]
-                l2_s = stats_df.loc[s, ('Relative L2 Error', 'std')]
-                mae_m = stats_df.loc[s, ('MAE', 'mean')]
-                mae_s = stats_df.loc[s, ('MAE', 'std')]
-                print(f"Pacing {s}: L2 = {l2_m:.4f} ± {l2_s:.4f} | MAE = {mae_m:.4f} ± {mae_s:.4f} ms")
-
-            pool_l2_m = df['Relative L2 Error'].mean()
-            pool_l2_s = df['Relative L2 Error'].std()
-            pool_mae_m = df['MAE'].mean()
-            pool_mae_s = df['MAE'].std()
-            print(f"Pooled  : L2 = {pool_l2_m:.4f} ± {pool_l2_s:.4f} | MAE = {pool_mae_m:.4f} ± {pool_mae_s:.4f} ms")
-            print("---------------------------------------")
-            n_hearts = num_test_hearts
-            n_sims   = 9
-            print(f"Inference timing ({n_hearts} hearts × {n_sims} pacing sites, single batch)")
-            print(f"  Total          : {infer_time*1000:.1f} ms")
-            print(f"  Per heart      : {infer_time/n_hearts*1000:.1f} ms")
-            print(f"  Per simulation : {infer_time/(n_hearts*n_sims)*1000:.1f} ms")
-            print("---------------------------------------\n")
-            
-            df_melted = df.melt(id_vars=['Pacing_ID'], value_vars=['Relative L2 Error', 'MAE'],
+            df_melted = df.melt(id_vars=['Pacing_ID'],
+                                value_vars=['Relative L2 Error', 'MAE'],
                                 var_name='Metric', value_name='Error')
 
             print("Generating distribution plot...")
             sns.set_theme(style="white", rc={"axes.facecolor": (0, 0, 0, 0)})
-            pal = sns.color_palette("OrRd_r", num_sims)
-            
-            g = sns.FacetGrid(df_melted, row="Pacing_ID", col="Metric", hue="Pacing_ID", 
-                              aspect=5, height=0.6, palette=pal, sharex="col", sharey=False)
-            
-            g.map(sns.kdeplot, "Error", bw_adjust=0.5, clip_on=False, fill=True, alpha=0.9, linewidth=1.5)
-            g.map(sns.kdeplot, "Error", clip_on=False, color="w", lw=2, bw_adjust=0.5)
-            g.refline(y=0, linewidth=2, linestyle="-", color=None, clip_on=False)
+            pal = sns.color_palette("OrRd_r", n_sims)
+            g = sns.FacetGrid(df_melted, row="Pacing_ID", col="Metric",
+                              hue="Pacing_ID", aspect=5, height=0.6,
+                              palette=pal, sharex="col", sharey=False)
+            g.map(sns.kdeplot, "Error", bw_adjust=0.5, clip_on=False,
+                  fill=True, alpha=0.9, linewidth=1.5)
+            g.map(sns.kdeplot, "Error", clip_on=False, color="w", lw=2,
+                  bw_adjust=0.5)
+            g.refline(y=0, linewidth=2, linestyle="-", color=None,
+                      clip_on=False)
 
             def draw_mean(*args, **kwargs):
                 data = kwargs.pop('data')
-                mean_val = data['Error'].mean()
-                plt.axvline(mean_val, color='k', linestyle='-', lw=1.5)
-                
-            g.map_dataframe(draw_mean)
+                plt.axvline(data['Error'].mean(), color='k',
+                            linestyle='-', lw=1.5)
 
+            g.map_dataframe(draw_mean)
             g.set_titles("")
             g.set(yticks=[], ylabel="")
             g.despine(bottom=True, left=True)
             g.figure.subplots_adjust(hspace=-0.4, wspace=0.1)
-
             for i, ax in enumerate(g.axes[:, 0]):
                 ax.text(-0.02, 0.2, str(i), fontweight="bold", color='black',
                         ha="right", va="center", transform=ax.transAxes)
-
             g.axes[0, 0].set_title("Relative L2 Error", fontsize=12, pad=20)
             g.axes[0, 1].set_title("Mean Absolute Error (MAE)", fontsize=12, pad=20)
-
             g.axes[-1, 0].set_xlabel("Error Value")
             g.axes[-1, 1].set_xlabel("Error Value (ms)")
             g.figure.set_size_inches(12, 8)
-
             for ax in g.axes[:, 0]:
                 ax.set_xlim(0.00, 0.10)
             for ax in g.axes[:, 1]:
                 ax.set_xlim(2.0, 10.0)
+            plt.suptitle(f"Error Distributions (n = {num_test_hearts})",
+                         y=1.05, fontsize=14)
 
-            plt.suptitle(f"Error Distributions (n = {num_test_hearts})", y=1.05, fontsize=14)
-            
-            plot_path = os.path.join(dump_test, "combined_error_distribution.png")
-            plt.savefig(plot_path, dpi=300)
+            kde_path = os.path.join(dump_test, "combined_error_distribution.svg")
+            plt.savefig(kde_path, format='svg', bbox_inches='tight',
+                        transparent=True)
             plt.close()
-            
-            print(f"Evaluation complete. Plot saved to: {plot_path}")
+            print(f"Saved KDE plot: {kde_path}")
+
+        # Save predictions
+        np.savez_compressed(
+            os.path.join(dump_test, "test_predictions.npz"),
+            pred=u_test_pred, true=u_test_raw,
+            l2=l2_mat, mae=mae_mat)
+        print(f"\nEvaluation complete. Outputs in {dump_test}")
 
 if __name__ == "__main__":
     main()

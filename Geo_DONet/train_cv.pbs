@@ -1,0 +1,21 @@
+#!/bin/bash
+#PBS -N Geo_DONet_CV
+#PBS -l walltime=48:00:00
+#PBS -l select=1:ncpus=32:ngpus=1:mem=400gb
+#PBS -P personal-e1590340
+#PBS -j oe
+
+source ~/load_dimon_env.sh
+cd /home/users/nus/e1590340/cardiac_simulation/DIMON/Geo_DONet
+
+echo "=== START $(date) ==="
+echo "Node: $(hostname)"
+nvidia-smi
+
+# 5 folds × ~7h = ~35h on A100 at 5000 ep, width=300, --lr-schedule.
+# Walltime > 24h forces routing to qlong. Drop to --epochs 3000 if you need
+# to fit inside qN (24h).
+python -u main_cv.py --width 300 --batch-size 24 --epochs 5000 --device cuda \
+                     --trunk cobiveco --lr-schedule
+
+echo "=== DONE $(date) ==="

@@ -34,10 +34,11 @@ def ParseArgument():
                         choices=['cobiveco', 'xyz'],
                         help='trunk spatial coordinates: 4D Cobiveco (ab,rt,tm,tv) '
                              'or 3D normalised Cartesian xyz (default: cobiveco)')
-    parser.add_argument('--seed', type=int, default=42,
-                        help='random seed for torch / numpy / random / cudnn '
-                             '(default: 42 — matches existing run; pass other '
-                             'values for seed-variance study)')
+    parser.add_argument('--omega-0', type=float, default=30.0,
+                        help='SIREN frequency hyperparameter (default: 30, '
+                             'paper default for images/SDFs). Lower → smoother, '
+                             'closer to a Tanh net; higher → sharper features '
+                             'but harder to train.')
     args = parser.parse_args()
     return args
 

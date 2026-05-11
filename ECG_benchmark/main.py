@@ -165,7 +165,7 @@ def main():
     os.makedirs('CheckPts', exist_ok=True)
 
     # ── Data ─────────────────────────────────────────────────────────────────
-    data       = np.load(os.path.join(DATA_BASE, "geo_dynet_data.npz"),
+    data       = np.load(os.path.join(DATA_BASE, "geo_donet_data_f121.npz"),
                          allow_pickle=True)
     theta_all  = data['theta'][:, :60].astype(np.float32)   # (125, 60)
     ecg_all    = data['ecg'].astype(np.float32)              # (125, 121, 10)

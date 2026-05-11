@@ -1,0 +1,37 @@
+#!/bin/bash
+#PBS -N Geo_DONet_seeds
+#PBS -l walltime=48:00:00
+#PBS -l select=1:ncpus=32:ngpus=1:mem=400gb
+#PBS -P personal-e1590340
+#PBS -j oe
+
+# Seed-variance study for Geo-DONet (Tanh baseline) — paper figure showing
+# how stable the 0.140 ± 0.011 V_m Rel L2 result is to random init.
+#
+# Runs the default 5000 ep / w300 / cobiveco / lr-schedule config across
+# 5 new seeds. Existing seed=42 result is untouched (its checkpoint and
+# save dir use the pre-seed-tag naming).
+#
+# Sequential, single GPU. Walltime = 5 × ~7 h = 35 h, +13 h margin.
+# Routes to qlong (walltime > 24 h). To parallelise, split the loop into
+# N independent qsubs and pass --seed via -v.
+
+source ~/load_dimon_env.sh
+cd /home/users/nus/e1590340/cardiac_simulation/DIMON/Geo_DONet
+
+echo "=== START $(date) ==="
+echo "Node: $(hostname)"
+nvidia-smi
+
+SEEDS=(0 1 2 3 4)
+for seed in "${SEEDS[@]}"; do
+    echo ""
+    echo "=== Seed ${seed} starting $(date) ==="
+    python -u main.py --width 300 --batch-size 24 --epochs 5000 \
+                      --device cuda --trunk cobiveco --lr-schedule \
+                      --seed ${seed}
+    echo "=== Seed ${seed} done $(date) ==="
+done
+
+echo ""
+echo "=== ALL DONE $(date) ==="

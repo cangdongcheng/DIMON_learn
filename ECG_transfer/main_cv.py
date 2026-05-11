@@ -193,7 +193,7 @@ def main():
     os.makedirs(save_dir, exist_ok=True)
 
     # Load data
-    data = np.load(os.path.join(DATA_BASE, "geo_dynet_data.npz"),
+    data = np.load(os.path.join(DATA_BASE, "geo_donet_data_f121.npz"),
                    allow_pickle=True)
     vm_all = data['vm'].astype(np.float32)       # (125, 50797, 121)
     ecg_all = data['ecg'].astype(np.float32)      # (125, 121, 10)

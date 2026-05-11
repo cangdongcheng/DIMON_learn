@@ -1,0 +1,35 @@
+#!/bin/bash
+#PBS -N Geo_DONet_SIREN_f301
+#PBS -l walltime=48:00:00
+#PBS -l select=1:ncpus=32:ngpus=1:mem=400gb
+#PBS -P personal-e1590340
+#PBS -j oe
+
+# Dense-temporal SIREN run on 301-frame (2 ms) training data, vs the original
+# 121-frame (5 ms) SIREN. With 2-3 samples covering the AP upstroke (vs 0-1
+# at step=5), SIREN should produce visibly sharper depolarisation at the
+# Rel L2 level.
+#
+# Memory tuning (after the first attempt OOM'd at batch=12 / chunk=25):
+#   - time_chunk_size 25 → 10 in main.py (halves trunk-recompute peak)
+#   - batch_size 12 → 8 here (shrinks einsum output + gradient memory ~33 %)
+#   - PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to reclaim the
+#     ~800 MB of allocator fragmentation that bit the first attempt.
+# Expected peak: ~30 GB on 40 GB A100, ~10 GB headroom.
+#
+# Wall: ~40 h projected (5x the step=5 SIREN × 1.5 for batch=8 × small
+# overhead for finer chunking). Walltime 48 h gives 8 h slack.
+
+source ~/load_dimon_env.sh
+cd /home/users/nus/e1590340/cardiac_simulation/DIMON/Geo_DONet_SIREN
+
+echo "=== START $(date) ==="
+echo "Node: $(hostname)"
+nvidia-smi
+
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+
+python -u main.py --width 300 --batch-size 8 --epochs 3000 \
+                  --device cuda --trunk cobiveco --omega-0 30
+
+echo "=== DONE $(date) ==="
