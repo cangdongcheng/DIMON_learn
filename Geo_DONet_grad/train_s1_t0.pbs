@@ -1,0 +1,22 @@
+#!/bin/bash
+#PBS -N gd_grad_s1_t0
+#PBS -l walltime=24:00:00
+#PBS -l select=1:ncpus=32:ngpus=1:mem=400gb
+#PBS -P personal-e1590340
+#PBS -j oe
+
+# Experiment 8: MSE + spatial only at λ_s = 1.0, λ_t = 0.
+# f301, 3000 epochs.
+
+source ~/load_dimon_env.sh
+cd /home/users/nus/e1590340/cardiac_simulation/DIMON/Geo_DONet_grad
+
+echo "=== START $(date) ==="
+echo "Node: $(hostname)  Job: $PBS_JOBNAME ($PBS_JOBID)"
+nvidia-smi
+
+python -u main.py --width 300 --batch-size 12 --epochs 3000 --lr-schedule \
+                  --device cuda --trunk cobiveco --frames 301 \
+                  --lambda-spatial 1.0 --lambda-temporal 0
+
+echo "=== DONE  $(date) ==="

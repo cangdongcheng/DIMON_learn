@@ -1,0 +1,310 @@
+=== START Wed May 13 23:49:47 +08 2026 ===
+Node: x1000c2s5b0n1  Job: gd_grad_s05_t0 (14486277.pbs101)
+Wed May 13 23:49:47 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 550.163.01             Driver Version: 550.163.01     CUDA Version: 12.4     |
+|-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA A100-SXM4-40GB          On  |   00000000:C1:00.0 Off |                    0 |
+| N/A   41C    P0             54W /  400W |       1MiB /  40960MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+                                                                                         
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI        PID   Type   Process name                              GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+Trunk: 4D Cobiveco (ab, rt, tm, tv)
+Data: 125 cases, 50797 nodes, 301 time steps
+Time range: [0, 600] ms, step=2 ms
+Split: 95 train / 5 val / 25 test
+Precomputing trunk chunks...
+  13 chunks, 15289897 total trunk points
+Loading grad operator: /home/users/nus/e1590340/scratch/Mengxiao_20260212_VTK_Merged_ED_CSV/reference/edge_grad_operator.npz
+/home/users/nus/e1590340/cardiac_simulation/DIMON/Geo_DONet_grad/main.py:127: UserWarning: Sparse CSR tensor support is in beta state. If you miss a functionality in the sparse tensor support, please submit a feature request to https://github.com/pytorch/pytorch/issues. (Triggered internally at /pytorch/aten/src/ATen/SparseCsrTensorImpl.cpp:53.)
+  return G_coo.coalesce().to_sparse_csr().to(device), n_edges
+  320286 edges on 50797-node canonical reference
+Precomputing gradient denominators...
+  λ_spatial=0.5, λ_temporal=0.0, eps=1e-06
+Model: geo [60, 300, 300, 300, 300], trunk [5, 300, 300, 300, 300], params 561,901
+Temporal chunks: 25 frames/chunk
+--- Starting Training ---
+Epoch 0/3000 | Tr 2.0668 (mse 1.5632 sp 1.0071 tp 1.0000) | Val 2.1783 (mse 1.6709 sp 1.0148 tp 1.0002) | Te 1.8753 | Best Val 2.1783 | ETA 1388m1s
+Epoch 10/3000 | Tr 0.8907 (mse 0.3880 sp 1.0053 tp 0.9776) | Val 1.0772 (mse 0.5716 sp 1.0112 tp 0.9770) | Te 0.9754 | Best Val 0.9667 | ETA 1331m1s
+Epoch 20/3000 | Tr 0.7471 (mse 0.2447 sp 1.0048 tp 0.9730) | Val 0.7465 (mse 0.2435 sp 1.0058 tp 0.9726) | Te 0.7391 | Best Val 0.7465 | ETA 1324m11s
+Epoch 30/3000 | Tr 0.7799 (mse 0.2776 sp 1.0045 tp 0.9725) | Val 0.7466 (mse 0.2444 sp 1.0043 tp 0.9723) | Te 0.7656 | Best Val 0.7167 | ETA 1318m52s
+Epoch 40/3000 | Tr 0.7056 (mse 0.2041 sp 1.0030 tp 0.9700) | Val 0.7058 (mse 0.2047 sp 1.0021 tp 0.9696) | Te 0.7012 | Best Val 0.7058 | ETA 1313m59s
+Epoch 50/3000 | Tr 0.6977 (mse 0.1965 sp 1.0023 tp 0.9682) | Val 0.7040 (mse 0.2031 sp 1.0018 tp 0.9678) | Te 0.6935 | Best Val 0.6962 | ETA 1309m15s
+Epoch 60/3000 | Tr 0.6882 (mse 0.1874 sp 1.0016 tp 0.9660) | Val 0.6893 (mse 0.1887 sp 1.0013 tp 0.9657) | Te 0.6847 | Best Val 0.6893 | ETA 1304m38s
+Epoch 70/3000 | Tr 0.6882 (mse 0.1878 sp 1.0008 tp 0.9647) | Val 0.6870 (mse 0.1867 sp 1.0008 tp 0.9644) | Te 0.6814 | Best Val 0.6852 | ETA 1300m5s
+Epoch 80/3000 | Tr 0.6769 (mse 0.1773 sp 0.9993 tp 0.9638) | Val 0.6804 (mse 0.1808 sp 0.9991 tp 0.9637) | Te 0.6735 | Best Val 0.6768 | ETA 1295m34s
+Epoch 90/3000 | Tr 0.6819 (mse 0.1827 sp 0.9984 tp 0.9630) | Val 0.6954 (mse 0.1961 sp 0.9986 tp 0.9630) | Te 0.6804 | Best Val 0.6768 | ETA 1291m4s
+Epoch 100/3000 | Tr 0.6670 (mse 0.1680 sp 0.9979 tp 0.9615) | Val 0.6684 (mse 0.1693 sp 0.9982 tp 0.9615) | Te 0.6631 | Best Val 0.6684 | ETA 1286m35s
+Epoch 110/3000 | Tr 0.6567 (mse 0.1581 sp 0.9972 tp 0.9594) | Val 0.6581 (mse 0.1594 sp 0.9974 tp 0.9595) | Te 0.6530 | Best Val 0.6581 | ETA 1282m6s
+Epoch 120/3000 | Tr 0.6591 (mse 0.1614 sp 0.9954 tp 0.9573) | Val 0.6577 (mse 0.1600 sp 0.9954 tp 0.9578) | Te 0.6459 | Best Val 0.6506 | ETA 1277m37s
+Epoch 130/3000 | Tr 0.6356 (mse 0.1393 sp 0.9926 tp 0.9544) | Val 0.6351 (mse 0.1389 sp 0.9924 tp 0.9549) | Te 0.6287 | Best Val 0.6351 | ETA 1273m9s
+Epoch 140/3000 | Tr 0.6131 (mse 0.1190 sp 0.9880 tp 0.9494) | Val 0.6165 (mse 0.1220 sp 0.9889 tp 0.9503) | Te 0.6093 | Best Val 0.6165 | ETA 1268m41s
+Epoch 150/3000 | Tr 0.6026 (mse 0.1102 sp 0.9848 tp 0.9454) | Val 0.6122 (mse 0.1186 sp 0.9872 tp 0.9480) | Te 0.6076 | Best Val 0.6061 | ETA 1264m19s
+Epoch 160/3000 | Tr 0.5887 (mse 0.0979 sp 0.9817 tp 0.9424) | Val 0.5953 (mse 0.1034 sp 0.9839 tp 0.9439) | Te 0.5863 | Best Val 0.5953 | ETA 1259m52s
+Epoch 170/3000 | Tr 0.5835 (mse 0.0943 sp 0.9784 tp 0.9402) | Val 0.5887 (mse 0.0986 sp 0.9803 tp 0.9416) | Te 0.5795 | Best Val 0.5887 | ETA 1255m25s
+Epoch 180/3000 | Tr 0.5855 (mse 0.0959 sp 0.9791 tp 0.9390) | Val 0.5971 (mse 0.1060 sp 0.9822 tp 0.9406) | Te 0.5895 | Best Val 0.5870 | ETA 1250m57s
+Epoch 190/3000 | Tr 0.5729 (mse 0.0862 sp 0.9734 tp 0.9365) | Val 0.5845 (mse 0.0962 sp 0.9767 tp 0.9381) | Te 0.5767 | Best Val 0.5766 | ETA 1246m30s
+Epoch 200/3000 | Tr 0.5749 (mse 0.0891 sp 0.9715 tp 0.9357) | Val 0.5784 (mse 0.0915 sp 0.9739 tp 0.9371) | Te 0.5728 | Best Val 0.5766 | ETA 1242m2s
+Epoch 210/3000 | Tr 0.5688 (mse 0.0843 sp 0.9692 tp 0.9331) | Val 0.5702 (mse 0.0842 sp 0.9719 tp 0.9353) | Te 0.5648 | Best Val 0.5701 | ETA 1237m35s
+Epoch 220/3000 | Tr 0.5603 (mse 0.0769 sp 0.9668 tp 0.9318) | Val 0.5659 (mse 0.0810 sp 0.9698 tp 0.9339) | Te 0.5587 | Best Val 0.5659 | ETA 1233m7s
+Epoch 230/3000 | Tr 0.5548 (mse 0.0729 sp 0.9639 tp 0.9294) | Val 0.5603 (mse 0.0769 sp 0.9669 tp 0.9315) | Te 0.5522 | Best Val 0.5601 | ETA 1228m41s
+Epoch 240/3000 | Tr 0.5497 (mse 0.0690 sp 0.9613 tp 0.9272) | Val 0.5613 (mse 0.0787 sp 0.9653 tp 0.9298) | Te 0.5529 | Best Val 0.5568 | ETA 1224m14s
+Epoch 250/3000 | Tr 0.5534 (mse 0.0730 sp 0.9608 tp 0.9270) | Val 0.5586 (mse 0.0765 sp 0.9642 tp 0.9298) | Te 0.5504 | Best Val 0.5556 | ETA 1219m47s
+Epoch 260/3000 | Tr 0.5459 (mse 0.0668 sp 0.9581 tp 0.9254) | Val 0.5523 (mse 0.0711 sp 0.9623 tp 0.9279) | Te 0.5440 | Best Val 0.5523 | ETA 1215m19s
+Epoch 270/3000 | Tr 0.5442 (mse 0.0664 sp 0.9556 tp 0.9231) | Val 0.5493 (mse 0.0694 sp 0.9598 tp 0.9261) | Te 0.5418 | Best Val 0.5488 | ETA 1210m53s
+Epoch 280/3000 | Tr 0.5423 (mse 0.0653 sp 0.9539 tp 0.9224) | Val 0.5490 (mse 0.0695 sp 0.9590 tp 0.9257) | Te 0.5398 | Best Val 0.5488 | ETA 1206m26s
+Epoch 290/3000 | Tr 0.5412 (mse 0.0648 sp 0.9528 tp 0.9215) | Val 0.5509 (mse 0.0721 sp 0.9578 tp 0.9248) | Te 0.5430 | Best Val 0.5462 | ETA 1202m0s
+Epoch 300/3000 | Tr 0.5370 (mse 0.0619 sp 0.9502 tp 0.9200) | Val 0.5453 (mse 0.0678 sp 0.9550 tp 0.9237) | Te 0.5370 | Best Val 0.5450 | ETA 1197m36s
+Epoch 310/3000 | Tr 0.5402 (mse 0.0656 sp 0.9491 tp 0.9195) | Val 0.5468 (mse 0.0697 sp 0.9542 tp 0.9230) | Te 0.5406 | Best Val 0.5421 | ETA 1193m9s
+Epoch 320/3000 | Tr 0.5328 (mse 0.0595 sp 0.9466 tp 0.9183) | Val 0.5419 (mse 0.0657 sp 0.9524 tp 0.9221) | Te 0.5325 | Best Val 0.5419 | ETA 1188m43s
+Epoch 330/3000 | Tr 0.5332 (mse 0.0609 sp 0.9446 tp 0.9174) | Val 0.5424 (mse 0.0672 sp 0.9504 tp 0.9219) | Te 0.5331 | Best Val 0.5392 | ETA 1184m16s
+Epoch 340/3000 | Tr 0.5302 (mse 0.0588 sp 0.9428 tp 0.9162) | Val 0.5390 (mse 0.0640 sp 0.9500 tp 0.9207) | Te 0.5290 | Best Val 0.5373 | ETA 1179m50s
+Epoch 350/3000 | Tr 0.5286 (mse 0.0576 sp 0.9421 tp 0.9157) | Val 0.5396 (mse 0.0653 sp 0.9487 tp 0.9206) | Te 0.5289 | Best Val 0.5368 | ETA 1175m23s
+Epoch 360/3000 | Tr 0.5277 (mse 0.0576 sp 0.9403 tp 0.9152) | Val 0.5354 (mse 0.0620 sp 0.9467 tp 0.9193) | Te 0.5255 | Best Val 0.5336 | ETA 1170m57s
+Epoch 370/3000 | Tr 0.5287 (mse 0.0584 sp 0.9406 tp 0.9147) | Val 0.5359 (mse 0.0623 sp 0.9472 tp 0.9193) | Te 0.5275 | Best Val 0.5336 | ETA 1166m30s
+Epoch 380/3000 | Tr 0.5310 (mse 0.0615 sp 0.9391 tp 0.9144) | Val 0.5462 (mse 0.0725 sp 0.9474 tp 0.9200) | Te 0.5307 | Best Val 0.5336 | ETA 1162m3s
+Epoch 390/3000 | Tr 0.5259 (mse 0.0570 sp 0.9379 tp 0.9135) | Val 0.5336 (mse 0.0613 sp 0.9446 tp 0.9183) | Te 0.5236 | Best Val 0.5336 | ETA 1157m37s
+Epoch 400/3000 | Tr 0.5281 (mse 0.0592 sp 0.9377 tp 0.9143) | Val 0.5368 (mse 0.0646 sp 0.9445 tp 0.9186) | Te 0.5278 | Best Val 0.5329 | ETA 1153m10s
+Epoch 410/3000 | Tr 0.5321 (mse 0.0635 sp 0.9372 tp 0.9129) | Val 0.5413 (mse 0.0695 sp 0.9435 tp 0.9179) | Te 0.5258 | Best Val 0.5323 | ETA 1148m44s
+Epoch 420/3000 | Tr 0.5186 (mse 0.0522 sp 0.9328 tp 0.9103) | Val 0.5292 (mse 0.0587 sp 0.9411 tp 0.9163) | Te 0.5186 | Best Val 0.5284 | ETA 1144m17s
+Epoch 430/3000 | Tr 0.5191 (mse 0.0528 sp 0.9325 tp 0.9096) | Val 0.5295 (mse 0.0590 sp 0.9409 tp 0.9160) | Te 0.5182 | Best Val 0.5284 | ETA 1139m50s
+Epoch 440/3000 | Tr 0.5160 (mse 0.0510 sp 0.9300 tp 0.9086) | Val 0.5273 (mse 0.0577 sp 0.9391 tp 0.9145) | Te 0.5168 | Best Val 0.5262 | ETA 1135m24s
+Epoch 450/3000 | Tr 0.5163 (mse 0.0520 sp 0.9286 tp 0.9079) | Val 0.5282 (mse 0.0588 sp 0.9388 tp 0.9153) | Te 0.5181 | Best Val 0.5244 | ETA 1130m59s
+Epoch 460/3000 | Tr 0.5144 (mse 0.0508 sp 0.9272 tp 0.9071) | Val 0.5242 (mse 0.0558 sp 0.9368 tp 0.9136) | Te 0.5148 | Best Val 0.5242 | ETA 1126m32s
+Epoch 470/3000 | Tr 0.5172 (mse 0.0538 sp 0.9268 tp 0.9068) | Val 0.5269 (mse 0.0591 sp 0.9356 tp 0.9131) | Te 0.5143 | Best Val 0.5229 | ETA 1122m5s
+Epoch 480/3000 | Tr 0.5181 (mse 0.0547 sp 0.9268 tp 0.9074) | Val 0.5285 (mse 0.0604 sp 0.9362 tp 0.9140) | Te 0.5156 | Best Val 0.5229 | ETA 1117m39s
+Epoch 490/3000 | Tr 0.5117 (mse 0.0494 sp 0.9246 tp 0.9048) | Val 0.5258 (mse 0.0583 sp 0.9349 tp 0.9136) | Te 0.5154 | Best Val 0.5229 | ETA 1113m12s
+Epoch 500/3000 | Tr 0.5143 (mse 0.0527 sp 0.9232 tp 0.9053) | Val 0.5356 (mse 0.0690 sp 0.9333 tp 0.9111) | Te 0.5193 | Best Val 0.5197 | ETA 1108m46s
+Epoch 510/3000 | Tr 0.5327 (mse 0.0677 sp 0.9300 tp 0.9079) | Val 0.5564 (mse 0.0869 sp 0.9391 tp 0.9139) | Te 0.5267 | Best Val 0.5197 | ETA 1104m20s
+Epoch 520/3000 | Tr 59.6094 (mse 49.2250 sp 20.7687 tp 1.3340) | Val 60.2314 (mse 52.6233 sp 15.2162 tp 1.3569) | Te 64.3865 | Best Val 0.5197 | ETA 1099m53s
+Epoch 530/3000 | Tr 14.7815 (mse 10.8761 sp 7.8108 tp 1.0569) | Val 21.3148 (mse 17.5566 sp 7.5164 tp 1.0932) | Te 16.1851 | Best Val 0.5197 | ETA 1095m27s
+Epoch 540/3000 | Tr 1.4813 (mse 0.8250 sp 1.3126 tp 1.0020) | Val 1.6068 (mse 0.9142 sp 1.3853 tp 0.9983) | Te 1.6243 | Best Val 0.5197 | ETA 1091m0s
+Epoch 550/3000 | Tr 1.0406 (mse 0.4638 sp 1.1537 tp 0.9926) | Val 1.1932 (mse 0.5798 sp 1.2268 tp 0.9912) | Te 1.2688 | Best Val 0.5197 | ETA 1086m34s
+Epoch 560/3000 | Tr 0.9415 (mse 0.3851 sp 1.1128 tp 0.9882) | Val 1.1078 (mse 0.5099 sp 1.1958 tp 0.9882) | Te 1.1737 | Best Val 0.5197 | ETA 1082m7s
+Epoch 570/3000 | Tr 0.8926 (mse 0.3476 sp 1.0899 tp 0.9855) | Val 1.0638 (mse 0.4760 sp 1.1755 tp 0.9859) | Te 1.1296 | Best Val 0.5197 | ETA 1077m41s
+Epoch 580/3000 | Tr 0.8524 (mse 0.3155 sp 1.0738 tp 0.9834) | Val 1.0233 (mse 0.4432 sp 1.1602 tp 0.9841) | Te 1.0723 | Best Val 0.5197 | ETA 1073m15s
+Epoch 590/3000 | Tr 0.8253 (mse 0.2943 sp 1.0620 tp 0.9816) | Val 1.0139 (mse 0.4383 sp 1.1511 tp 0.9822) | Te 1.0398 | Best Val 0.5197 | ETA 1068m50s
+Epoch 600/3000 | Tr 0.8056 (mse 0.2787 sp 1.0538 tp 0.9801) | Val 0.9871 (mse 0.4188 sp 1.1365 tp 0.9807) | Te 1.0215 | Best Val 0.5197 | ETA 1064m23s
+Epoch 610/3000 | Tr 0.7884 (mse 0.2648 sp 1.0471 tp 0.9787) | Val 0.9708 (mse 0.4047 sp 1.1320 tp 0.9791) | Te 0.9915 | Best Val 0.5197 | ETA 1059m57s
+Epoch 620/3000 | Tr 0.7745 (mse 0.2531 sp 1.0428 tp 0.9774) | Val 0.9538 (mse 0.3894 sp 1.1287 tp 0.9777) | Te 0.9776 | Best Val 0.5197 | ETA 1055m31s
+Epoch 630/3000 | Tr 0.7601 (mse 0.2415 sp 1.0371 tp 0.9762) | Val 0.9451 (mse 0.3824 sp 1.1253 tp 0.9765) | Te 0.9627 | Best Val 0.5197 | ETA 1051m4s
+Epoch 640/3000 | Tr 0.7487 (mse 0.2319 sp 1.0335 tp 0.9751) | Val 0.9281 (mse 0.3702 sp 1.1158 tp 0.9753) | Te 0.9465 | Best Val 0.5197 | ETA 1046m38s
+Epoch 650/3000 | Tr 0.7381 (mse 0.2228 sp 1.0305 tp 0.9740) | Val 0.9068 (mse 0.3528 sp 1.1079 tp 0.9742) | Te 0.9340 | Best Val 0.5197 | ETA 1042m12s
+Epoch 660/3000 | Tr 0.7288 (mse 0.2152 sp 1.0272 tp 0.9731) | Val 0.9053 (mse 0.3504 sp 1.1100 tp 0.9732) | Te 0.9271 | Best Val 0.5197 | ETA 1037m46s
+Epoch 670/3000 | Tr 0.7183 (mse 0.2061 sp 1.0244 tp 0.9721) | Val 0.8928 (mse 0.3405 sp 1.1045 tp 0.9722) | Te 0.9202 | Best Val 0.5197 | ETA 1033m20s
+Epoch 680/3000 | Tr 0.7101 (mse 0.1991 sp 1.0220 tp 0.9711) | Val 0.8882 (mse 0.3378 sp 1.1007 tp 0.9713) | Te 0.9059 | Best Val 0.5197 | ETA 1028m54s
+Epoch 690/3000 | Tr 0.7036 (mse 0.1936 sp 1.0200 tp 0.9702) | Val 0.8711 (mse 0.3222 sp 1.0977 tp 0.9703) | Te 0.9106 | Best Val 0.5197 | ETA 1024m27s
+Epoch 700/3000 | Tr 0.6966 (mse 0.1878 sp 1.0177 tp 0.9694) | Val 0.8848 (mse 0.3376 sp 1.0943 tp 0.9696) | Te 0.8782 | Best Val 0.5197 | ETA 1020m1s
+Epoch 710/3000 | Tr 0.7290 (mse 0.2206 sp 1.0168 tp 0.9689) | Val 0.9041 (mse 0.3612 sp 1.0857 tp 0.9692) | Te 0.9428 | Best Val 0.5197 | ETA 1015m35s
+Epoch 720/3000 | Tr 0.8977 (mse 0.3798 sp 1.0357 tp 0.9694) | Val 1.0735 (mse 0.5205 sp 1.1060 tp 0.9698) | Te 1.0042 | Best Val 0.5197 | ETA 1011m9s
+Epoch 730/3000 | Tr 1.1345 (mse 0.5568 sp 1.1554 tp 0.9702) | Val 1.4758 (mse 0.8350 sp 1.2817 tp 0.9714) | Te 1.2450 | Best Val 0.5197 | ETA 1006m42s
+Epoch 740/3000 | Tr 0.7293 (mse 0.2159 sp 1.0268 tp 0.9667) | Val 1.0047 (mse 0.4364 sp 1.1366 tp 0.9679) | Te 0.8743 | Best Val 0.5197 | ETA 1002m17s
+Epoch 750/3000 | Tr 0.6696 (mse 0.1639 sp 1.0115 tp 0.9657) | Val 0.9065 (mse 0.3571 sp 1.0988 tp 0.9667) | Te 0.8002 | Best Val 0.5197 | ETA 997m51s
+Epoch 760/3000 | Tr 0.6645 (mse 0.1591 sp 1.0109 tp 0.9648) | Val 0.9001 (mse 0.3509 sp 1.0983 tp 0.9660) | Te 0.7890 | Best Val 0.5197 | ETA 993m24s
+Epoch 770/3000 | Tr 0.6579 (mse 0.1541 sp 1.0077 tp 0.9640) | Val 0.8823 (mse 0.3331 sp 1.0985 tp 0.9651) | Te 0.7857 | Best Val 0.5197 | ETA 988m58s
+Epoch 780/3000 | Tr 0.6525 (mse 0.1499 sp 1.0053 tp 0.9631) | Val 0.8588 (mse 0.3119 sp 1.0938 tp 0.9643) | Te 0.7706 | Best Val 0.5197 | ETA 984m32s
+Epoch 790/3000 | Tr 0.6440 (mse 0.1428 sp 1.0026 tp 0.9622) | Val 0.8643 (mse 0.3170 sp 1.0947 tp 0.9635) | Te 0.7694 | Best Val 0.5197 | ETA 980m5s
+Epoch 800/3000 | Tr 0.6396 (mse 0.1391 sp 1.0010 tp 0.9613) | Val 0.8449 (mse 0.2994 sp 1.0909 tp 0.9625) | Te 0.7614 | Best Val 0.5197 | ETA 975m39s
+Epoch 810/3000 | Tr 0.6351 (mse 0.1355 sp 0.9992 tp 0.9603) | Val 0.8450 (mse 0.2996 sp 1.0908 tp 0.9618) | Te 0.7568 | Best Val 0.5197 | ETA 971m13s
+Epoch 820/3000 | Tr 0.6307 (mse 0.1319 sp 0.9976 tp 0.9593) | Val 0.8524 (mse 0.3071 sp 1.0906 tp 0.9610) | Te 0.7495 | Best Val 0.5197 | ETA 966m47s
+Epoch 830/3000 | Tr 0.6285 (mse 0.1302 sp 0.9964 tp 0.9583) | Val 0.8620 (mse 0.3159 sp 1.0923 tp 0.9603) | Te 0.7484 | Best Val 0.5197 | ETA 962m20s
+Epoch 840/3000 | Tr 0.6239 (mse 0.1264 sp 0.9950 tp 0.9573) | Val 0.8357 (mse 0.2925 sp 1.0865 tp 0.9593) | Te 0.7392 | Best Val 0.5197 | ETA 957m54s
+Epoch 850/3000 | Tr 0.6215 (mse 0.1244 sp 0.9941 tp 0.9562) | Val 0.8368 (mse 0.2955 sp 1.0826 tp 0.9585) | Te 0.7402 | Best Val 0.5197 | ETA 953m28s
+Epoch 860/3000 | Tr 0.6239 (mse 0.1266 sp 0.9945 tp 0.9552) | Val 0.8317 (mse 0.2870 sp 1.0895 tp 0.9575) | Te 0.7423 | Best Val 0.5197 | ETA 949m2s
+Epoch 870/3000 | Tr 0.6891 (mse 0.1868 sp 1.0047 tp 0.9546) | Val 0.8563 (mse 0.3113 sp 1.0899 tp 0.9571) | Te 0.8044 | Best Val 0.5197 | ETA 944m36s
+Epoch 880/3000 | Tr 0.8441 (mse 0.2898 sp 1.1087 tp 0.9552) | Val 0.8853 (mse 0.3411 sp 1.0884 tp 0.9576) | Te 0.9162 | Best Val 0.5197 | ETA 940m10s
+Epoch 890/3000 | Tr 0.9331 (mse 0.3908 sp 1.0846 tp 0.9548) | Val 1.0339 (mse 0.4666 sp 1.1344 tp 0.9580) | Te 1.0796 | Best Val 0.5197 | ETA 935m44s
+Epoch 900/3000 | Tr 0.6378 (mse 0.1368 sp 1.0020 tp 0.9514) | Val 0.8830 (mse 0.3487 sp 1.0686 tp 0.9551) | Te 0.7181 | Best Val 0.5197 | ETA 931m17s
+Epoch 910/3000 | Tr 0.6117 (mse 0.1172 sp 0.9889 tp 0.9499) | Val 0.8280 (mse 0.3024 sp 1.0512 tp 0.9535) | Te 0.6948 | Best Val 0.5197 | ETA 926m51s
+Epoch 920/3000 | Tr 0.6033 (mse 0.1103 sp 0.9860 tp 0.9486) | Val 0.8411 (mse 0.3151 sp 1.0519 tp 0.9526) | Te 0.6769 | Best Val 0.5197 | ETA 922m25s
+Epoch 930/3000 | Tr 0.5993 (mse 0.1071 sp 0.9844 tp 0.9473) | Val 0.8089 (mse 0.2895 sp 1.0389 tp 0.9513) | Te 0.6739 | Best Val 0.5197 | ETA 917m59s
+Epoch 940/3000 | Tr 0.5976 (mse 0.1060 sp 0.9830 tp 0.9461) | Val 0.8185 (mse 0.2966 sp 1.0438 tp 0.9503) | Te 0.6679 | Best Val 0.5197 | ETA 913m32s
+Epoch 950/3000 | Tr 0.5934 (mse 0.1024 sp 0.9820 tp 0.9449) | Val 0.7892 (mse 0.2714 sp 1.0356 tp 0.9491) | Te 0.6671 | Best Val 0.5197 | ETA 909m6s
+Epoch 960/3000 | Tr 0.5902 (mse 0.0998 sp 0.9808 tp 0.9437) | Val 0.8093 (mse 0.2884 sp 1.0418 tp 0.9483) | Te 0.6616 | Best Val 0.5197 | ETA 904m40s
+Epoch 970/3000 | Tr 0.5952 (mse 0.1054 sp 0.9796 tp 0.9425) | Val 0.8168 (mse 0.2961 sp 1.0414 tp 0.9474) | Te 0.6787 | Best Val 0.5197 | ETA 900m14s
+Epoch 980/3000 | Tr 0.6122 (mse 0.1189 sp 0.9865 tp 0.9415) | Val 0.8575 (mse 0.3349 sp 1.0452 tp 0.9467) | Te 0.6620 | Best Val 0.5197 | ETA 895m48s
+Epoch 990/3000 | Tr 0.6383 (mse 0.1450 sp 0.9866 tp 0.9421) | Val 0.8542 (mse 0.3232 sp 1.0619 tp 0.9478) | Te 0.7055 | Best Val 0.5197 | ETA 891m21s
+Epoch 1000/3000 | Tr 0.6226 (mse 0.1232 sp 0.9986 tp 0.9401) | Val 0.7379 (mse 0.2258 sp 1.0243 tp 0.9447) | Te 0.6707 | Best Val 0.5197 | ETA 886m55s
+Epoch 1010/3000 | Tr 0.6214 (mse 0.1279 sp 0.9870 tp 0.9389) | Val 0.7695 (mse 0.2531 sp 1.0328 tp 0.9431) | Te 0.7222 | Best Val 0.5197 | ETA 882m29s
+Epoch 1020/3000 | Tr 0.5841 (mse 0.0962 sp 0.9758 tp 0.9373) | Val 0.7853 (mse 0.2719 sp 1.0267 tp 0.9426) | Te 0.6345 | Best Val 0.5197 | ETA 878m3s
+Epoch 1030/3000 | Tr 0.6122 (mse 0.1240 sp 0.9764 tp 0.9365) | Val 0.7814 (mse 0.2694 sp 1.0240 tp 0.9418) | Te 0.6656 | Best Val 0.5197 | ETA 873m37s
+Epoch 1040/3000 | Tr 0.5930 (mse 0.1062 sp 0.9735 tp 0.9357) | Val 0.7331 (mse 0.2157 sp 1.0349 tp 0.9402) | Te 0.6538 | Best Val 0.5197 | ETA 869m11s
+Epoch 1050/3000 | Tr 0.5802 (mse 0.0939 sp 0.9725 tp 0.9340) | Val 0.7476 (mse 0.2342 sp 1.0269 tp 0.9398) | Te 0.6312 | Best Val 0.5197 | ETA 864m44s
+Epoch 1060/3000 | Tr 0.5658 (mse 0.0816 sp 0.9683 tp 0.9326) | Val 0.7487 (mse 0.2349 sp 1.0276 tp 0.9383) | Te 0.6251 | Best Val 0.5197 | ETA 860m18s
+Epoch 1070/3000 | Tr 0.5638 (mse 0.0803 sp 0.9669 tp 0.9313) | Val 0.7278 (mse 0.2156 sp 1.0243 tp 0.9371) | Te 0.6222 | Best Val 0.5197 | ETA 855m52s
+Epoch 1080/3000 | Tr 0.5693 (mse 0.0858 sp 0.9670 tp 0.9302) | Val 0.7480 (mse 0.2356 sp 1.0247 tp 0.9365) | Te 0.6171 | Best Val 0.5197 | ETA 851m26s
+Epoch 1090/3000 | Tr 0.5897 (mse 0.1048 sp 0.9697 tp 0.9296) | Val 0.7918 (mse 0.2791 sp 1.0254 tp 0.9362) | Te 0.6420 | Best Val 0.5197 | ETA 846m59s
+Epoch 1100/3000 | Tr 0.6220 (mse 0.1331 sp 0.9778 tp 0.9287) | Val 0.8407 (mse 0.3192 sp 1.0428 tp 0.9365) | Te 0.7503 | Best Val 0.5197 | ETA 842m33s
+Epoch 1110/3000 | Tr 0.5788 (mse 0.0949 sp 0.9678 tp 0.9278) | Val 0.7742 (mse 0.2735 sp 1.0013 tp 0.9353) | Te 0.6765 | Best Val 0.5197 | ETA 838m7s
+Epoch 1120/3000 | Tr 0.5714 (mse 0.0891 sp 0.9645 tp 0.9267) | Val 0.6680 (mse 0.1698 sp 0.9965 tp 0.9329) | Te 0.6268 | Best Val 0.5197 | ETA 833m41s
+Epoch 1130/3000 | Tr 0.5574 (mse 0.0775 sp 0.9597 tp 0.9256) | Val 0.6932 (mse 0.1944 sp 0.9977 tp 0.9323) | Te 0.6109 | Best Val 0.5197 | ETA 829m15s
+Epoch 1140/3000 | Tr 0.5512 (mse 0.0722 sp 0.9580 tp 0.9246) | Val 0.7107 (mse 0.2135 sp 0.9945 tp 0.9317) | Te 0.5989 | Best Val 0.5197 | ETA 824m48s
+Epoch 1150/3000 | Tr 0.5490 (mse 0.0706 sp 0.9566 tp 0.9235) | Val 0.6812 (mse 0.1831 sp 0.9962 tp 0.9304) | Te 0.5970 | Best Val 0.5197 | ETA 820m22s
+Epoch 1160/3000 | Tr 0.5614 (mse 0.0826 sp 0.9574 tp 0.9227) | Val 0.7426 (mse 0.2431 sp 0.9989 tp 0.9308) | Te 0.6057 | Best Val 0.5197 | ETA 815m56s
+Epoch 1170/3000 | Tr 0.5504 (mse 0.0730 sp 0.9547 tp 0.9219) | Val 0.7025 (mse 0.2039 sp 0.9971 tp 0.9297) | Te 0.5937 | Best Val 0.5197 | ETA 811m30s
+Epoch 1180/3000 | Tr 0.5451 (mse 0.0687 sp 0.9528 tp 0.9205) | Val 0.6968 (mse 0.1983 sp 0.9970 tp 0.9284) | Te 0.5873 | Best Val 0.5197 | ETA 807m4s
+Epoch 1190/3000 | Tr 0.5560 (mse 0.0792 sp 0.9537 tp 0.9199) | Val 0.6795 (mse 0.1853 sp 0.9885 tp 0.9276) | Te 0.6058 | Best Val 0.5197 | ETA 802m38s
+Epoch 1200/3000 | Tr 0.6022 (mse 0.1203 sp 0.9638 tp 0.9227) | Val 0.6983 (mse 0.2006 sp 0.9954 tp 0.9299) | Te 0.6309 | Best Val 0.5197 | ETA 798m11s
+Epoch 1210/3000 | Tr 0.5538 (mse 0.0780 sp 0.9515 tp 0.9196) | Val 0.7174 (mse 0.2238 sp 0.9872 tp 0.9291) | Te 0.6064 | Best Val 0.5197 | ETA 793m45s
+Epoch 1220/3000 | Tr 0.5431 (mse 0.0687 sp 0.9488 tp 0.9185) | Val 0.6714 (mse 0.1802 sp 0.9824 tp 0.9263) | Te 0.5763 | Best Val 0.5197 | ETA 789m19s
+Epoch 1230/3000 | Tr 0.5405 (mse 0.0668 sp 0.9475 tp 0.9176) | Val 0.6588 (mse 0.1666 sp 0.9845 tp 0.9256) | Te 0.5832 | Best Val 0.5197 | ETA 784m53s
+Epoch 1240/3000 | Tr 0.5368 (mse 0.0640 sp 0.9457 tp 0.9162) | Val 0.6662 (mse 0.1747 sp 0.9831 tp 0.9251) | Te 0.5774 | Best Val 0.5197 | ETA 780m26s
+Epoch 1250/3000 | Tr 0.5491 (mse 0.0750 sp 0.9482 tp 0.9164) | Val 0.6503 (mse 0.1562 sp 0.9883 tp 0.9244) | Te 0.5841 | Best Val 0.5197 | ETA 776m0s
+Epoch 1260/3000 | Tr 0.5436 (mse 0.0710 sp 0.9450 tp 0.9148) | Val 0.6407 (mse 0.1473 sp 0.9868 tp 0.9246) | Te 0.5773 | Best Val 0.5197 | ETA 771m34s
+Epoch 1270/3000 | Tr 0.5368 (mse 0.0652 sp 0.9432 tp 0.9148) | Val 0.6369 (mse 0.1456 sp 0.9827 tp 0.9230) | Te 0.5707 | Best Val 0.5197 | ETA 767m8s
+Epoch 1280/3000 | Tr 0.5332 (mse 0.0625 sp 0.9414 tp 0.9131) | Val 0.6481 (mse 0.1567 sp 0.9827 tp 0.9229) | Te 0.5753 | Best Val 0.5197 | ETA 762m42s
+Epoch 1290/3000 | Tr 0.5332 (mse 0.0630 sp 0.9405 tp 0.9135) | Val 0.6466 (mse 0.1532 sp 0.9868 tp 0.9224) | Te 0.5715 | Best Val 0.5197 | ETA 758m15s
+Epoch 1300/3000 | Tr 0.5360 (mse 0.0663 sp 0.9394 tp 0.9130) | Val 0.6597 (mse 0.1680 sp 0.9834 tp 0.9217) | Te 0.5868 | Best Val 0.5197 | ETA 753m49s
+Epoch 1310/3000 | Tr 0.5708 (mse 0.0988 sp 0.9440 tp 0.9126) | Val 0.6700 (mse 0.1755 sp 0.9890 tp 0.9218) | Te 0.6287 | Best Val 0.5197 | ETA 749m23s
+Epoch 1320/3000 | Tr 0.5495 (mse 0.0790 sp 0.9410 tp 0.9127) | Val 0.6620 (mse 0.1689 sp 0.9862 tp 0.9210) | Te 0.5805 | Best Val 0.5197 | ETA 744m57s
+Epoch 1330/3000 | Tr 0.5322 (mse 0.0632 sp 0.9380 tp 0.9108) | Val 0.6548 (mse 0.1625 sp 0.9846 tp 0.9208) | Te 0.5760 | Best Val 0.5197 | ETA 740m31s
+Epoch 1340/3000 | Tr 0.5470 (mse 0.0784 sp 0.9371 tp 0.9109) | Val 0.6535 (mse 0.1600 sp 0.9870 tp 0.9201) | Te 0.5739 | Best Val 0.5197 | ETA 736m4s
+Epoch 1350/3000 | Tr 0.5325 (mse 0.0642 sp 0.9366 tp 0.9113) | Val 0.6162 (mse 0.1297 sp 0.9730 tp 0.9207) | Te 0.5657 | Best Val 0.5197 | ETA 731m38s
+Epoch 1360/3000 | Tr 0.5296 (mse 0.0622 sp 0.9348 tp 0.9102) | Val 0.6166 (mse 0.1256 sp 0.9821 tp 0.9199) | Te 0.5639 | Best Val 0.5197 | ETA 727m12s
+Epoch 1370/3000 | Tr 0.5267 (mse 0.0600 sp 0.9335 tp 0.9094) | Val 0.6396 (mse 0.1483 sp 0.9827 tp 0.9187) | Te 0.5610 | Best Val 0.5197 | ETA 722m46s
+Epoch 1380/3000 | Tr 0.5246 (mse 0.0580 sp 0.9332 tp 0.9103) | Val 0.6154 (mse 0.1249 sp 0.9811 tp 0.9181) | Te 0.5572 | Best Val 0.5197 | ETA 718m19s
+Epoch 1390/3000 | Tr 0.5223 (mse 0.0571 sp 0.9303 tp 0.9080) | Val 0.6058 (mse 0.1175 sp 0.9766 tp 0.9187) | Te 0.5574 | Best Val 0.5197 | ETA 713m53s
+Epoch 1400/3000 | Tr 0.5261 (mse 0.0607 sp 0.9308 tp 0.9077) | Val 0.6093 (mse 0.1196 sp 0.9794 tp 0.9167) | Te 0.5632 | Best Val 0.5197 | ETA 709m27s
+Epoch 1410/3000 | Tr 0.5224 (mse 0.0580 sp 0.9288 tp 0.9067) | Val 0.6303 (mse 0.1397 sp 0.9811 tp 0.9188) | Te 0.5766 | Best Val 0.5197 | ETA 705m1s
+Epoch 1420/3000 | Tr 0.5365 (mse 0.0707 sp 0.9315 tp 0.9062) | Val 0.6093 (mse 0.1247 sp 0.9690 tp 0.9172) | Te 0.5585 | Best Val 0.5197 | ETA 700m35s
+Epoch 1430/3000 | Tr 0.5343 (mse 0.0692 sp 0.9303 tp 0.9057) | Val 0.6068 (mse 0.1261 sp 0.9613 tp 0.9159) | Te 0.5645 | Best Val 0.5197 | ETA 696m8s
+Epoch 1440/3000 | Tr 0.5236 (mse 0.0596 sp 0.9280 tp 0.9066) | Val 0.6073 (mse 0.1235 sp 0.9675 tp 0.9151) | Te 0.5587 | Best Val 0.5197 | ETA 691m42s
+Epoch 1450/3000 | Tr 0.5400 (mse 0.0758 sp 0.9284 tp 0.9070) | Val 0.6754 (mse 0.1884 sp 0.9739 tp 0.9208) | Te 0.6325 | Best Val 0.5197 | ETA 687m16s
+Epoch 1460/3000 | Tr 0.5229 (mse 0.0579 sp 0.9300 tp 0.9077) | Val 0.6019 (mse 0.1153 sp 0.9733 tp 0.9197) | Te 0.5663 | Best Val 0.5197 | ETA 682m49s
+Epoch 1470/3000 | Tr 0.5145 (mse 0.0527 sp 0.9236 tp 0.9043) | Val 0.6252 (mse 0.1406 sp 0.9693 tp 0.9157) | Te 0.5553 | Best Val 0.5197 | ETA 678m23s
+Epoch 1480/3000 | Tr 0.5123 (mse 0.0512 sp 0.9223 tp 0.9034) | Val 0.5994 (mse 0.1171 sp 0.9645 tp 0.9136) | Te 0.5493 | Best Val 0.5197 | ETA 673m57s
+Epoch 1490/3000 | Tr 0.5153 (mse 0.0546 sp 0.9213 tp 0.9022) | Val 0.6058 (mse 0.1243 sp 0.9631 tp 0.9136) | Te 0.5463 | Best Val 0.5197 | ETA 669m31s
+Epoch 1500/3000 | Tr 0.5149 (mse 0.0535 sp 0.9228 tp 0.9035) | Val 0.6083 (mse 0.1249 sp 0.9667 tp 0.9130) | Te 0.5470 | Best Val 0.5197 | ETA 665m5s
+Epoch 1510/3000 | Tr 0.5228 (mse 0.0606 sp 0.9244 tp 0.9055) | Val 0.6551 (mse 0.1704 sp 0.9694 tp 0.9147) | Te 0.5750 | Best Val 0.5197 | ETA 660m39s
+Epoch 1520/3000 | Tr 0.5340 (mse 0.0721 sp 0.9239 tp 0.9018) | Val 0.6245 (mse 0.1370 sp 0.9750 tp 0.9121) | Te 0.5613 | Best Val 0.5197 | ETA 656m12s
+Epoch 1530/3000 | Tr 0.5129 (mse 0.0527 sp 0.9205 tp 0.9011) | Val 0.6089 (mse 0.1295 sp 0.9589 tp 0.9125) | Te 0.5547 | Best Val 0.5197 | ETA 651m46s
+Epoch 1540/3000 | Tr 0.5103 (mse 0.0511 sp 0.9183 tp 0.9012) | Val 0.5932 (mse 0.1140 sp 0.9583 tp 0.9120) | Te 0.5408 | Best Val 0.5197 | ETA 647m20s
+Epoch 1550/3000 | Tr 0.5104 (mse 0.0514 sp 0.9181 tp 0.9005) | Val 0.6001 (mse 0.1206 sp 0.9591 tp 0.9110) | Te 0.5458 | Best Val 0.5197 | ETA 642m54s
+Epoch 1560/3000 | Tr 0.5075 (mse 0.0489 sp 0.9174 tp 0.9005) | Val 0.6023 (mse 0.1236 sp 0.9575 tp 0.9111) | Te 0.5396 | Best Val 0.5197 | ETA 638m27s
+Epoch 1570/3000 | Tr 0.5068 (mse 0.0487 sp 0.9160 tp 0.8993) | Val 0.6043 (mse 0.1258 sp 0.9571 tp 0.9106) | Te 0.5398 | Best Val 0.5197 | ETA 634m1s
+Epoch 1580/3000 | Tr 0.5074 (mse 0.0499 sp 0.9150 tp 0.8990) | Val 0.6044 (mse 0.1241 sp 0.9607 tp 0.9128) | Te 0.5351 | Best Val 0.5197 | ETA 629m35s
+Epoch 1590/3000 | Tr 0.5100 (mse 0.0523 sp 0.9154 tp 0.8995) | Val 0.6476 (mse 0.1697 sp 0.9558 tp 0.9112) | Te 0.5387 | Best Val 0.5197 | ETA 625m9s
+Epoch 1600/3000 | Tr 0.5103 (mse 0.0517 sp 0.9173 tp 0.9007) | Val 0.6079 (mse 0.1284 sp 0.9592 tp 0.9102) | Te 0.5496 | Best Val 0.5197 | ETA 620m42s
+Epoch 1610/3000 | Tr 0.5037 (mse 0.0468 sp 0.9138 tp 0.8983) | Val 0.5990 (mse 0.1187 sp 0.9606 tp 0.9176) | Te 0.5420 | Best Val 0.5197 | ETA 616m16s
+Epoch 1620/3000 | Tr 0.5150 (mse 0.0569 sp 0.9163 tp 0.8983) | Val 0.5916 (mse 0.1115 sp 0.9601 tp 0.9099) | Te 0.5308 | Best Val 0.5197 | ETA 611m50s
+Epoch 1630/3000 | Tr 0.5081 (mse 0.0502 sp 0.9158 tp 0.8984) | Val 0.6225 (mse 0.1449 sp 0.9551 tp 0.9099) | Te 0.5403 | Best Val 0.5197 | ETA 607m24s
+Epoch 1640/3000 | Tr 0.5048 (mse 0.0481 sp 0.9134 tp 0.8985) | Val 0.6059 (mse 0.1291 sp 0.9537 tp 0.9087) | Te 0.5379 | Best Val 0.5197 | ETA 602m58s
+Epoch 1650/3000 | Tr 0.5084 (mse 0.0518 sp 0.9132 tp 0.8975) | Val 0.5974 (mse 0.1220 sp 0.9509 tp 0.9085) | Te 0.5366 | Best Val 0.5197 | ETA 598m31s
+Epoch 1660/3000 | Tr 0.5089 (mse 0.0507 sp 0.9164 tp 0.8999) | Val 0.6072 (mse 0.1308 sp 0.9529 tp 0.9116) | Te 0.5406 | Best Val 0.5197 | ETA 594m5s
+Epoch 1670/3000 | Tr 0.5190 (mse 0.0617 sp 0.9147 tp 0.8978) | Val 0.6260 (mse 0.1478 sp 0.9564 tp 0.9108) | Te 0.5832 | Best Val 0.5197 | ETA 589m39s
+Epoch 1680/3000 | Tr 0.5052 (mse 0.0481 sp 0.9141 tp 0.8992) | Val 0.5727 (mse 0.0982 sp 0.9489 tp 0.9092) | Te 0.5373 | Best Val 0.5197 | ETA 585m13s
+Epoch 1690/3000 | Tr 0.5006 (mse 0.0455 sp 0.9103 tp 0.8967) | Val 0.5865 (mse 0.1133 sp 0.9463 tp 0.9086) | Te 0.5297 | Best Val 0.5197 | ETA 580m46s
+Epoch 1700/3000 | Tr 0.5061 (mse 0.0496 sp 0.9131 tp 0.8978) | Val 0.6014 (mse 0.1277 sp 0.9473 tp 0.9069) | Te 0.5367 | Best Val 0.5197 | ETA 576m20s
+Epoch 1710/3000 | Tr 0.4991 (mse 0.0448 sp 0.9085 tp 0.8958) | Val 0.5717 (mse 0.1009 sp 0.9416 tp 0.9079) | Te 0.5354 | Best Val 0.5197 | ETA 571m54s
+Epoch 1720/3000 | Tr 0.4977 (mse 0.0438 sp 0.9079 tp 0.8952) | Val 0.5772 (mse 0.1042 sp 0.9459 tp 0.9102) | Te 0.5297 | Best Val 0.5197 | ETA 567m28s
+Epoch 1730/3000 | Tr 0.5027 (mse 0.0491 sp 0.9073 tp 0.8946) | Val 0.6016 (mse 0.1297 sp 0.9438 tp 0.9066) | Te 0.5297 | Best Val 0.5197 | ETA 563m2s
+Epoch 1740/3000 | Tr 0.4981 (mse 0.0443 sp 0.9076 tp 0.8951) | Val 0.5894 (mse 0.1189 sp 0.9409 tp 0.9061) | Te 0.5296 | Best Val 0.5197 | ETA 558m35s
+Epoch 1750/3000 | Tr 0.4978 (mse 0.0441 sp 0.9074 tp 0.8944) | Val 0.5864 (mse 0.1144 sp 0.9441 tp 0.9066) | Te 0.5288 | Best Val 0.5197 | ETA 554m9s
+Epoch 1760/3000 | Tr 0.5044 (mse 0.0491 sp 0.9107 tp 0.8973) | Val 0.5851 (mse 0.1144 sp 0.9414 tp 0.9066) | Te 0.5366 | Best Val 0.5197 | ETA 549m43s
+Epoch 1770/3000 | Tr 0.5004 (mse 0.0463 sp 0.9082 tp 0.8937) | Val 0.5781 (mse 0.1080 sp 0.9402 tp 0.9075) | Te 0.5329 | Best Val 0.5197 | ETA 545m17s
+Epoch 1780/3000 | Tr 0.4992 (mse 0.0458 sp 0.9068 tp 0.8942) | Val 0.5760 (mse 0.1070 sp 0.9381 tp 0.9067) | Te 0.5383 | Best Val 0.5197 | ETA 540m50s
+Epoch 1790/3000 | Tr 0.4965 (mse 0.0438 sp 0.9053 tp 0.8939) | Val 0.5596 (mse 0.0898 sp 0.9396 tp 0.9052) | Te 0.5291 | Best Val 0.5197 | ETA 536m24s
+Epoch 1800/3000 | Tr 0.4973 (mse 0.0441 sp 0.9065 tp 0.8947) | Val 0.5591 (mse 0.0899 sp 0.9384 tp 0.9054) | Te 0.5257 | Best Val 0.5197 | ETA 531m58s
+Epoch 1810/3000 | Tr 0.4986 (mse 0.0453 sp 0.9065 tp 0.8941) | Val 0.5677 (mse 0.0985 sp 0.9384 tp 0.9050) | Te 0.5256 | Best Val 0.5197 | ETA 527m32s
+Epoch 1820/3000 | Tr 0.4998 (mse 0.0466 sp 0.9064 tp 0.8941) | Val 0.5878 (mse 0.1181 sp 0.9394 tp 0.9051) | Te 0.5299 | Best Val 0.5197 | ETA 523m6s
+Epoch 1830/3000 | Tr 0.5045 (mse 0.0511 sp 0.9068 tp 0.8944) | Val 0.5896 (mse 0.1211 sp 0.9370 tp 0.9042) | Te 0.5367 | Best Val 0.5197 | ETA 518m39s
+Epoch 1840/3000 | Tr 0.4968 (mse 0.0441 sp 0.9054 tp 0.8937) | Val 0.5691 (mse 0.1019 sp 0.9343 tp 0.9062) | Te 0.5260 | Best Val 0.5197 | ETA 514m13s
+Epoch 1850/3000 | Tr 0.5035 (mse 0.0495 sp 0.9080 tp 0.8961) | Val 0.5686 (mse 0.0994 sp 0.9383 tp 0.9074) | Te 0.5289 | Best Val 0.5197 | ETA 509m47s
+Epoch 1860/3000 | Tr 0.5009 (mse 0.0481 sp 0.9056 tp 0.8937) | Val 0.6046 (mse 0.1364 sp 0.9363 tp 0.9042) | Te 0.5418 | Best Val 0.5197 | ETA 505m21s
+Epoch 1870/3000 | Tr 0.4958 (mse 0.0437 sp 0.9042 tp 0.8936) | Val 0.5709 (mse 0.1031 sp 0.9355 tp 0.9067) | Te 0.5291 | Best Val 0.5197 | ETA 500m54s
+Epoch 1880/3000 | Tr 0.4964 (mse 0.0439 sp 0.9051 tp 0.8942) | Val 0.5916 (mse 0.1257 sp 0.9319 tp 0.9042) | Te 0.5335 | Best Val 0.5197 | ETA 496m28s
+Epoch 1890/3000 | Tr 0.5040 (mse 0.0514 sp 0.9051 tp 0.8934) | Val 0.6108 (mse 0.1443 sp 0.9328 tp 0.9033) | Te 0.5450 | Best Val 0.5197 | ETA 492m2s
+Epoch 1900/3000 | Tr 0.4953 (mse 0.0438 sp 0.9029 tp 0.8924) | Val 0.5555 (mse 0.0911 sp 0.9288 tp 0.9034) | Te 0.5256 | Best Val 0.5197 | ETA 487m36s
+Epoch 1910/3000 | Tr 0.4945 (mse 0.0441 sp 0.9008 tp 0.8913) | Val 0.5603 (mse 0.0967 sp 0.9271 tp 0.9025) | Te 0.5289 | Best Val 0.5197 | ETA 483m9s
+Epoch 1920/3000 | Tr 0.4906 (mse 0.0407 sp 0.8998 tp 0.8912) | Val 0.5646 (mse 0.1003 sp 0.9286 tp 0.9038) | Te 0.5201 | Best Val 0.5197 | ETA 478m43s
+Epoch 1930/3000 | Tr 0.4939 (mse 0.0428 sp 0.9022 tp 0.8933) | Val 0.5786 (mse 0.1123 sp 0.9326 tp 0.9052) | Te 0.5240 | Best Val 0.5197 | ETA 474m17s
+Epoch 1940/3000 | Tr 0.4947 (mse 0.0440 sp 0.9014 tp 0.8925) | Val 0.5965 (mse 0.1298 sp 0.9335 tp 0.9039) | Te 0.5356 | Best Val 0.5197 | ETA 469m51s
+Epoch 1950/3000 | Tr 0.4962 (mse 0.0450 sp 0.9024 tp 0.8917) | Val 0.5614 (mse 0.0987 sp 0.9256 tp 0.9020) | Te 0.5241 | Best Val 0.5197 | ETA 465m25s
+Epoch 1960/3000 | Tr 0.4943 (mse 0.0442 sp 0.9001 tp 0.8913) | Val 0.5423 (mse 0.0788 sp 0.9271 tp 0.9042) | Te 0.5264 | Best Val 0.5197 | ETA 460m58s
+Epoch 1970/3000 | Tr 0.4905 (mse 0.0411 sp 0.8988 tp 0.8904) | Val 0.5444 (mse 0.0815 sp 0.9257 tp 0.9031) | Te 0.5195 | Best Val 0.5197 | ETA 456m32s
+Epoch 1980/3000 | Tr 0.4954 (mse 0.0449 sp 0.9011 tp 0.8903) | Val 0.5530 (mse 0.0859 sp 0.9343 tp 0.9060) | Te 0.5266 | Best Val 0.5197 | ETA 452m6s
+Epoch 1990/3000 | Tr 0.4986 (mse 0.0488 sp 0.8995 tp 0.8910) | Val 0.5670 (mse 0.1052 sp 0.9237 tp 0.9013) | Te 0.5330 | Best Val 0.5197 | ETA 447m40s
+Epoch 2000/3000 | Tr 0.4934 (mse 0.0434 sp 0.8999 tp 0.8909) | Val 0.5564 (mse 0.0922 sp 0.9284 tp 0.9022) | Te 0.5242 | Best Val 0.5197 | ETA 443m13s
+Epoch 2010/3000 | Tr 0.4996 (mse 0.0499 sp 0.8994 tp 0.8905) | Val 0.5528 (mse 0.0886 sp 0.9283 tp 0.9016) | Te 0.5277 | Best Val 0.5197 | ETA 438m47s
+Epoch 2020/3000 | Tr 0.4939 (mse 0.0433 sp 0.9011 tp 0.8922) | Val 0.5476 (mse 0.0843 sp 0.9265 tp 0.9018) | Te 0.5280 | Best Val 0.5197 | ETA 434m21s
+Epoch 2030/3000 | Tr 0.4893 (mse 0.0405 sp 0.8976 tp 0.8899) | Val 0.5627 (mse 0.1007 sp 0.9240 tp 0.9008) | Te 0.5205 | Best Val 0.5197 | ETA 429m55s
+Epoch 2040/3000 | Tr 0.4909 (mse 0.0418 sp 0.8984 tp 0.8903) | Val 0.5536 (mse 0.0913 sp 0.9246 tp 0.9032) | Te 0.5240 | Best Val 0.5197 | ETA 425m28s
+Epoch 2050/3000 | Tr 0.4955 (mse 0.0457 sp 0.8996 tp 0.8904) | Val 0.5705 (mse 0.1047 sp 0.9317 tp 0.9072) | Te 0.5197 | Best Val 0.5197 | ETA 421m2s
+Epoch 2060/3000 | Tr 0.4901 (mse 0.0406 sp 0.8989 tp 0.8903) | Val 0.5541 (mse 0.0929 sp 0.9224 tp 0.9013) | Te 0.5178 | Best Val 0.5197 | ETA 416m36s
+Epoch 2070/3000 | Tr 0.4889 (mse 0.0405 sp 0.8969 tp 0.8895) | Val 0.5447 (mse 0.0841 sp 0.9213 tp 0.9007) | Te 0.5175 | Best Val 0.5197 | ETA 412m10s
+Epoch 2080/3000 | Tr 0.4910 (mse 0.0418 sp 0.8984 tp 0.8906) | Val 0.5469 (mse 0.0851 sp 0.9237 tp 0.9022) | Te 0.5219 | Best Val 0.5197 | ETA 407m44s
+Epoch 2090/3000 | Tr 0.4920 (mse 0.0439 sp 0.8962 tp 0.8886) | Val 0.5510 (mse 0.0903 sp 0.9215 tp 0.9005) | Te 0.5133 | Best Val 0.5197 | ETA 403m17s
+Epoch 2100/3000 | Tr 0.4887 (mse 0.0405 sp 0.8963 tp 0.8892) | Val 0.5370 (mse 0.0765 sp 0.9211 tp 0.9004) | Te 0.5205 | Best Val 0.5197 | ETA 398m51s
+Epoch 2110/3000 | Tr 0.4859 (mse 0.0388 sp 0.8943 tp 0.8876) | Val 0.5409 (mse 0.0814 sp 0.9190 tp 0.9004) | Te 0.5186 | Best Val 0.5197 | ETA 394m25s
+Epoch 2120/3000 | Tr 0.4907 (mse 0.0429 sp 0.8956 tp 0.8878) | Val 0.5284 (mse 0.0699 sp 0.9171 tp 0.8993) | Te 0.5148 | Best Val 0.5197 | ETA 389m59s
+Epoch 2130/3000 | Tr 0.4869 (mse 0.0392 sp 0.8953 tp 0.8883) | Val 0.5482 (mse 0.0891 sp 0.9181 tp 0.8992) | Te 0.5239 | Best Val 0.5197 | ETA 385m32s
+Epoch 2140/3000 | Tr 0.4934 (mse 0.0458 sp 0.8953 tp 0.8876) | Val 0.5441 (mse 0.0847 sp 0.9187 tp 0.8996) | Te 0.5172 | Best Val 0.5197 | ETA 381m6s
+Epoch 2150/3000 | Tr 0.4999 (mse 0.0507 sp 0.8983 tp 0.8888) | Val 0.5822 (mse 0.1194 sp 0.9256 tp 0.9005) | Te 0.5239 | Best Val 0.5197 | ETA 376m40s
+Epoch 2160/3000 | Tr 0.4879 (mse 0.0399 sp 0.8961 tp 0.8893) | Val 0.5384 (mse 0.0788 sp 0.9192 tp 0.9004) | Te 0.5149 | Best Val 0.5197 | ETA 372m14s
+Epoch 2170/3000 | Tr 0.4851 (mse 0.0385 sp 0.8933 tp 0.8870) | Val 0.5340 (mse 0.0763 sp 0.9153 tp 0.8980) | Te 0.5211 | Best Val 0.5197 | ETA 367m48s
+Epoch 2180/3000 | Tr 0.4866 (mse 0.0400 sp 0.8931 tp 0.8874) | Val 0.5397 (mse 0.0808 sp 0.9178 tp 0.9008) | Te 0.5191 | Best Val 0.5197 | ETA 363m21s
+Epoch 2190/3000 | Tr 0.4858 (mse 0.0394 sp 0.8928 tp 0.8867) | Val 0.5315 (mse 0.0743 sp 0.9143 tp 0.8981) | Te 0.5225 | Best Val 0.5191 | ETA 358m57s
+Epoch 2200/3000 | Tr 0.4874 (mse 0.0406 sp 0.8936 tp 0.8873) | Val 0.5486 (mse 0.0890 sp 0.9193 tp 0.8998) | Te 0.5172 | Best Val 0.5191 | ETA 354m31s
+Epoch 2210/3000 | Tr 0.4884 (mse 0.0414 sp 0.8942 tp 0.8876) | Val 0.5362 (mse 0.0774 sp 0.9176 tp 0.8991) | Te 0.5180 | Best Val 0.5191 | ETA 350m5s
+Epoch 2220/3000 | Tr 0.4854 (mse 0.0386 sp 0.8937 tp 0.8881) | Val 0.5372 (mse 0.0795 sp 0.9154 tp 0.8976) | Te 0.5174 | Best Val 0.5191 | ETA 345m38s
+Epoch 2230/3000 | Tr 0.4856 (mse 0.0391 sp 0.8931 tp 0.8876) | Val 0.5342 (mse 0.0760 sp 0.9166 tp 0.8990) | Te 0.5200 | Best Val 0.5191 | ETA 341m12s
+Epoch 2240/3000 | Tr 0.4880 (mse 0.0414 sp 0.8933 tp 0.8868) | Val 0.5264 (mse 0.0683 sp 0.9163 tp 0.8984) | Te 0.5254 | Best Val 0.5191 | ETA 336m46s
+Epoch 2250/3000 | Tr 0.4876 (mse 0.0412 sp 0.8928 tp 0.8860) | Val 0.5383 (mse 0.0793 sp 0.9179 tp 0.8991) | Te 0.5141 | Best Val 0.5156 | ETA 332m20s
+Epoch 2260/3000 | Tr 0.4851 (mse 0.0391 sp 0.8919 tp 0.8859) | Val 0.5214 (mse 0.0621 sp 0.9184 tp 0.9002) | Te 0.5144 | Best Val 0.5156 | ETA 327m54s
+Epoch 2270/3000 | Tr 0.4911 (mse 0.0440 sp 0.8944 tp 0.8876) | Val 0.5305 (mse 0.0711 sp 0.9188 tp 0.8989) | Te 0.5211 | Best Val 0.5156 | ETA 323m27s
+Epoch 2280/3000 | Tr 0.4847 (mse 0.0385 sp 0.8924 tp 0.8868) | Val 0.5198 (mse 0.0628 sp 0.9139 tp 0.8976) | Te 0.5137 | Best Val 0.5156 | ETA 319m1s
+Epoch 2290/3000 | Tr 0.4856 (mse 0.0400 sp 0.8912 tp 0.8857) | Val 0.5328 (mse 0.0756 sp 0.9143 tp 0.8975) | Te 0.5182 | Best Val 0.5156 | ETA 314m35s
+Epoch 2300/3000 | Tr 0.4839 (mse 0.0387 sp 0.8905 tp 0.8854) | Val 0.5203 (mse 0.0642 sp 0.9123 tp 0.8967) | Te 0.5197 | Best Val 0.5156 | ETA 310m9s
+Epoch 2310/3000 | Tr 0.4887 (mse 0.0412 sp 0.8951 tp 0.8892) | Val 0.5138 (mse 0.0559 sp 0.9158 tp 0.8993) | Te 0.5205 | Best Val 0.5125 | ETA 305m42s
+Epoch 2320/3000 | Tr 0.4847 (mse 0.0393 sp 0.8907 tp 0.8852) | Val 0.5371 (mse 0.0795 sp 0.9154 tp 0.8972) | Te 0.5212 | Best Val 0.5125 | ETA 301m16s
+Epoch 2330/3000 | Tr 0.4819 (mse 0.0372 sp 0.8894 tp 0.8849) | Val 0.5274 (mse 0.0710 sp 0.9130 tp 0.8970) | Te 0.5170 | Best Val 0.5125 | ETA 296m50s
+Epoch 2340/3000 | Tr 0.4841 (mse 0.0393 sp 0.8897 tp 0.8849) | Val 0.5243 (mse 0.0681 sp 0.9123 tp 0.8965) | Te 0.5232 | Best Val 0.5123 | ETA 292m24s
+Epoch 2350/3000 | Tr 0.4868 (mse 0.0407 sp 0.8922 tp 0.8855) | Val 0.5219 (mse 0.0640 sp 0.9158 tp 0.8975) | Te 0.5141 | Best Val 0.5104 | ETA 287m57s
+Epoch 2360/3000 | Tr 0.4865 (mse 0.0411 sp 0.8907 tp 0.8852) | Val 0.5164 (mse 0.0576 sp 0.9175 tp 0.8995) | Te 0.5199 | Best Val 0.5104 | ETA 283m31s
+Epoch 2370/3000 | Tr 0.4832 (mse 0.0382 sp 0.8899 tp 0.8852) | Val 0.5060 (mse 0.0506 sp 0.9107 tp 0.8961) | Te 0.5150 | Best Val 0.5060 | ETA 279m5s
+Epoch 2380/3000 | Tr 0.4901 (mse 0.0437 sp 0.8929 tp 0.8855) | Val 0.5249 (mse 0.0676 sp 0.9147 tp 0.8972) | Te 0.5382 | Best Val 0.5060 | ETA 274m39s
+Epoch 2390/3000 | Tr 0.4812 (mse 0.0372 sp 0.8879 tp 0.8839) | Val 0.5192 (mse 0.0628 sp 0.9127 tp 0.8964) | Te 0.5142 | Best Val 0.5060 | ETA 270m13s
+Epoch 2400/3000 | Tr 0.4822 (mse 0.0382 sp 0.8882 tp 0.8840) | Val 0.5239 (mse 0.0680 sp 0.9116 tp 0.8964) | Te 0.5220 | Best Val 0.5060 | ETA 265m46s
+Epoch 2410/3000 | Tr 0.4827 (mse 0.0377 sp 0.8901 tp 0.8848) | Val 0.5109 (mse 0.0548 sp 0.9121 tp 0.8961) | Te 0.5145 | Best Val 0.5060 | ETA 261m20s
+Epoch 2420/3000 | Tr 0.4903 (mse 0.0454 sp 0.8899 tp 0.8846) | Val 0.5265 (mse 0.0691 sp 0.9148 tp 0.8973) | Te 0.5494 | Best Val 0.5060 | ETA 256m54s
+Epoch 2430/3000 | Tr 0.4821 (mse 0.0376 sp 0.8888 tp 0.8850) | Val 0.5312 (mse 0.0745 sp 0.9134 tp 0.8965) | Te 0.5250 | Best Val 0.5060 | ETA 252m28s
+Epoch 2440/3000 | Tr 0.4818 (mse 0.0378 sp 0.8878 tp 0.8839) | Val 0.5232 (mse 0.0670 sp 0.9125 tp 0.8966) | Te 0.5211 | Best Val 0.5060 | ETA 248m1s
+Epoch 2450/3000 | Tr 0.4802 (mse 0.0367 sp 0.8869 tp 0.8832) | Val 0.5103 (mse 0.0550 sp 0.9106 tp 0.8960) | Te 0.5190 | Best Val 0.5060 | ETA 243m35s
+Epoch 2460/3000 | Tr 0.4817 (mse 0.0379 sp 0.8876 tp 0.8837) | Val 0.5156 (mse 0.0592 sp 0.9129 tp 0.8971) | Te 0.5197 | Best Val 0.5060 | ETA 239m9s
+Epoch 2470/3000 | Tr 0.4832 (mse 0.0386 sp 0.8891 tp 0.8845) | Val 0.5171 (mse 0.0607 sp 0.9129 tp 0.8957) | Te 0.5153 | Best Val 0.5060 | ETA 234m43s
+Epoch 2480/3000 | Tr 0.4817 (mse 0.0377 sp 0.8881 tp 0.8838) | Val 0.5126 (mse 0.0568 sp 0.9114 tp 0.8965) | Te 0.5238 | Best Val 0.5060 | ETA 230m16s
+Epoch 2490/3000 | Tr 0.4800 (mse 0.0366 sp 0.8869 tp 0.8831) | Val 0.5165 (mse 0.0610 sp 0.9110 tp 0.8956) | Te 0.5181 | Best Val 0.5060 | ETA 225m50s
+Epoch 2500/3000 | Tr 0.4847 (mse 0.0402 sp 0.8891 tp 0.8845) | Val 0.5122 (mse 0.0561 sp 0.9122 tp 0.8960) | Te 0.5207 | Best Val 0.5060 | ETA 221m24s
+Epoch 2510/3000 | Tr 0.4813 (mse 0.0378 sp 0.8870 tp 0.8835) | Val 0.5072 (mse 0.0521 sp 0.9103 tp 0.8957) | Te 0.5194 | Best Val 0.5060 | ETA 216m58s
+Epoch 2520/3000 | Tr 0.4816 (mse 0.0376 sp 0.8879 tp 0.8843) | Val 0.5070 (mse 0.0524 sp 0.9093 tp 0.8953) | Te 0.5172 | Best Val 0.5060 | ETA 212m32s
+Epoch 2530/3000 | Tr 0.4791 (mse 0.0362 sp 0.8858 tp 0.8827) | Val 0.5067 (mse 0.0520 sp 0.9095 tp 0.8950) | Te 0.5188 | Best Val 0.5060 | ETA 208m5s
+Epoch 2540/3000 | Tr 0.4821 (mse 0.0385 sp 0.8873 tp 0.8835) | Val 0.5079 (mse 0.0525 sp 0.9106 tp 0.8955) | Te 0.5148 | Best Val 0.5060 | ETA 203m39s
+Epoch 2550/3000 | Tr 0.4792 (mse 0.0366 sp 0.8851 tp 0.8823) | Val 0.5118 (mse 0.0563 sp 0.9109 tp 0.8953) | Te 0.5157 | Best Val 0.5060 | ETA 199m13s
+Epoch 2560/3000 | Tr 0.4795 (mse 0.0369 sp 0.8853 tp 0.8825) | Val 0.5088 (mse 0.0534 sp 0.9107 tp 0.8955) | Te 0.5183 | Best Val 0.5060 | ETA 194m47s
+Epoch 2570/3000 | Tr 0.4812 (mse 0.0382 sp 0.8860 tp 0.8828) | Val 0.5164 (mse 0.0612 sp 0.9104 tp 0.8953) | Te 0.5305 | Best Val 0.5060 | ETA 190m20s
+Epoch 2580/3000 | Tr 0.4804 (mse 0.0376 sp 0.8856 tp 0.8828) | Val 0.5071 (mse 0.0517 sp 0.9110 tp 0.8964) | Te 0.5165 | Best Val 0.5047 | ETA 185m54s
+Epoch 2590/3000 | Tr 0.4791 (mse 0.0366 sp 0.8850 tp 0.8821) | Val 0.5130 (mse 0.0583 sp 0.9093 tp 0.8954) | Te 0.5259 | Best Val 0.5047 | ETA 181m28s
+Epoch 2600/3000 | Tr 0.4795 (mse 0.0365 sp 0.8861 tp 0.8835) | Val 0.5035 (mse 0.0489 sp 0.9091 tp 0.8951) | Te 0.5242 | Best Val 0.5035 | ETA 177m2s
+Epoch 2610/3000 | Tr 0.4791 (mse 0.0366 sp 0.8851 tp 0.8824) | Val 0.5074 (mse 0.0529 sp 0.9091 tp 0.8949) | Te 0.5260 | Best Val 0.5031 | ETA 172m35s
+Epoch 2620/3000 | Tr 0.4781 (mse 0.0360 sp 0.8842 tp 0.8816) | Val 0.5080 (mse 0.0534 sp 0.9091 tp 0.8946) | Te 0.5184 | Best Val 0.5031 | ETA 168m9s
+Epoch 2630/3000 | Tr 0.4818 (mse 0.0384 sp 0.8869 tp 0.8833) | Val 0.5084 (mse 0.0507 sp 0.9154 tp 0.8979) | Te 0.5235 | Best Val 0.5031 | ETA 163m43s
+Epoch 2640/3000 | Tr 0.4785 (mse 0.0365 sp 0.8839 tp 0.8815) | Val 0.5064 (mse 0.0515 sp 0.9098 tp 0.8951) | Te 0.5195 | Best Val 0.5031 | ETA 159m17s
+Epoch 2650/3000 | Tr 0.4785 (mse 0.0366 sp 0.8838 tp 0.8815) | Val 0.5061 (mse 0.0510 sp 0.9102 tp 0.8949) | Te 0.5226 | Best Val 0.5031 | ETA 154m51s
+Epoch 2660/3000 | Tr 0.4778 (mse 0.0360 sp 0.8837 tp 0.8814) | Val 0.5045 (mse 0.0499 sp 0.9092 tp 0.8945) | Te 0.5208 | Best Val 0.5031 | ETA 150m24s
+Epoch 2670/3000 | Tr 0.4773 (mse 0.0354 sp 0.8839 tp 0.8816) | Val 0.5054 (mse 0.0504 sp 0.9099 tp 0.8950) | Te 0.5193 | Best Val 0.5031 | ETA 145m58s
+Epoch 2680/3000 | Tr 0.4778 (mse 0.0358 sp 0.8840 tp 0.8816) | Val 0.5062 (mse 0.0511 sp 0.9102 tp 0.8950) | Te 0.5181 | Best Val 0.5031 | ETA 141m32s
+Epoch 2690/3000 | Tr 0.4794 (mse 0.0376 sp 0.8837 tp 0.8814) | Val 0.5038 (mse 0.0497 sp 0.9083 tp 0.8944) | Te 0.5210 | Best Val 0.5031 | ETA 137m6s
+Epoch 2700/3000 | Tr 0.4793 (mse 0.0375 sp 0.8837 tp 0.8812) | Val 0.5062 (mse 0.0514 sp 0.9096 tp 0.8954) | Te 0.5199 | Best Val 0.5029 | ETA 132m39s
+Epoch 2710/3000 | Tr 0.4779 (mse 0.0360 sp 0.8837 tp 0.8817) | Val 0.5034 (mse 0.0489 sp 0.9090 tp 0.8950) | Te 0.5191 | Best Val 0.5029 | ETA 128m13s
+Epoch 2720/3000 | Tr 0.4781 (mse 0.0363 sp 0.8836 tp 0.8815) | Val 0.5036 (mse 0.0495 sp 0.9082 tp 0.8945) | Te 0.5153 | Best Val 0.5029 | ETA 123m47s
