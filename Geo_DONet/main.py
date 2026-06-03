@@ -1,656 +1,569 @@
 """
-Geo-DONet: geometry → V_m(x,t) on the canonical reference.
+Geo-DONet (clean) — train / test / infer entry point.
 
-DeepONet with 1 branch + 1 trunk:
-  - Branch (geometry): theta (N, 60) PCA coefficients → (N, p)
-  - Trunk (spatiotemporal): (ab, rt, tm, tv, t_norm) — plain 5D, no Fourier
-    features. Trunk input dim = 5 (4 Cobiveco + normalised time).
-  - Output: einsum(branch, trunk) → V_m(x,t) on reference mesh (N, M, T).
+Functional modules:
+  - architecture : opnn.GeoDONet / build_trunk_chunks / chunked_forward
+  - data         : utils.load_dataset / load_inputs / split_indices / Normalizer
+  - evaluation   : utils.mse (train) + vm_rel_l2_mae / activation_time (inference)
+  - output       : viz.* (metric tables, traces, 3D scatters, colorbars, .vtu)
 
-Temporal chunking: the full M×T grid (~6M points at 121 frames) is split
-into chunks of T_c frames. The trunk is evaluated per chunk, and the
-branch output is reused across chunks.
+Every run default lives in the CONFIGURATION block below; each is exposed as a CLI
+flag that overrides it. Run with no flags for the hardcoded config; pass a flag to
+override it. Run main.py from the folder it lives in — outputs are written relative
+to the cwd (CheckPts/, Predictions/<experiment_name>/).
 
-Data: geo_donet_data_f121.npz from package_training_data.py
+main() dispatches three modes (default = train):
+  - (no flag)     train()                 train + validate; save the best-val weights
+  - --test-model  infer(test_mode=True)   forward pass on the test split + evaluate vs GT
+  - --infer       infer(test_mode=False)  forward pass on all cases; --eval to also score
 
-Evaluation outputs (--test-model 1) — all SVG, transparent background:
-  Test/
-    vm_traces_heart{h}_{GT,Pred,combined}.svg   — 5-node V_m time-series
-    snapshots/heart{h}_t{XXX}ms_{GT,Pred,AbsErr}.svg
-                                                — 3D V_m at frames selected by --vm-frames
-    activation_time/heart{h}_AT_{GT,Pred,AbsErr}.svg
-                                                — AT map (first -10 mV crossing)
-    colorbars/cbar_{Vm,Vm_AbsErr,AT,AT_AbsErr}.svg
-                                                — standalone shared colorbars
-    test_predictions.npz                        — predictions + AT metrics
-
-Metrics reported: V_m Rel L2 + MAE; AT Rel L2 + MAE (per case, mean ± std).
-3D scatters are rasterised inside the SVG (full 50 797 nodes @ 300 dpi).
-Rendering is parallelised across a ProcessPoolExecutor (up to 8 workers).
-
-Eval-time CLI flags:
-    --skip-snapshots           skip 3D V_m + AT scatters (keeps traces + metrics)
-    --vm-frames START:END:STEP V_m snapshot time range, ms (default 0:300:10).
-                               END inclusive. e.g. 0:600:10 for the full beat.
+Checkpoints are just model weights. The architecture is inferred from the weight
+shapes and the normalizer is rebuilt from the training npz (--train-data) on every
+run, so there is one load path for both new (GeoDONet) and legacy (original-opnn)
+checkpoints — legacy keys are remapped transparently. experiment_name = the
+checkpoint filename stem, and all outputs land in Predictions/<experiment_name>/.
 
 Usage:
-    source ~/load_dimon_env.sh
-    cd DIMON/Geo_DONet
-
-    # Train
-    python main.py --epochs 5000 --device cuda
-
-    # Evaluate (single line, no backslashes when pasting into bash)
-    python main.py --test-model 1 --device cuda --epochs 5000 --width 300 --model-path CheckPts/model_chkpts_geo_donet_5000ep_0.0005lr_w300.pt
-
-    # Evaluate, full-beat snapshots every 10 ms
-    python main.py --test-model 1 --device cuda --epochs 5000 --width 300 --model-path CheckPts/model_chkpts_geo_donet_5000ep_0.0005lr_w300.pt --vm-frames 0:600:10
-
-    # Quick eval (metrics + traces only, no 3D scatters)
-    python main.py --test-model 1 --device cuda --epochs 5000 --width 300 --model-path CheckPts/model_chkpts_geo_donet_5000ep_0.0005lr_w300.pt --skip-snapshots
+    python main.py                                              # train (defaults)
+    python main.py --epochs 5000 --lr-scheduled --width 300     # train, overrides
+    python main.py --test-model --model-path CheckPts/<run>.pt  # eval on the test split
+    python main.py --test-model --model-path ./CheckPts/geodonet_w300_d4_5000ep_lrsched.pt --snapshot --save --color-bar
+    python main.py --test-model --model-path <ckpt> --vtu-out --mesh canonical.vtu --n-viz 100
+    python main.py --infer --model-path <ckpt> --data-path new.npz --save   # predict, no GT
+    python main.py --infer --model-path <ckpt> --data-path new.npz --eval   # predict + score
 """
 import os
-import torch
+import argparse
 import time as timer
+
 import numpy as np
-from torch.utils.data import DataLoader, TensorDataset
-from utils import *
-from opnn import *
+import torch
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-import random
-from concurrent.futures import ProcessPoolExecutor
+import meshio
+from torch.optim.lr_scheduler import LinearLR
+
+from utils import (load_dataset, load_inputs, split_indices, Normalizer,
+                   mse, vm_rel_l2_mae, activation_time, at_rel_l2_mae, to_numpy)
+from opnn import (GeoDONet, build_trunk_chunks, chunked_forward, build_model,
+                  is_legacy_state_dict, remap_legacy_state_dict, config_from_state_dict)
+from viz import (format_metric_table, format_metric_summary, save_vm_traces,
+                 render_snapshots, save_colorbars, write_vtu_series)
 
 
-# ── Module-level worker for parallel 3D scatter rendering ──────────────────
-# ProcessPoolExecutor requires a top-level (picklable) function. We pass the
-# shared cartesian_coords via the pool initializer to avoid re-serializing it
-# for every task.
-_WORKER_XYZ = None
+# ════════════════════════ CONFIGURATION ════════════════════════
+# Defaults for every run. Each is exposed as a CLI flag (below) that overrides it.
+
+# where the data lives — one absolute path; the npz, reference xyz (--snapshot) and
+# reference vtu (--vtu-out) all resolve under it.
+DATA_BASE = "/home/svu/e1032484/scratch"
+DATA_FILE = "geo_donet_data_f601.npz"                  # default train/infer npz
+FRAME_STEP = 5                                         # stride the time axis on load (2 -> f301 from f601, 5 -> f121)
+REFERENCE_XYZ = os.path.join(DATA_BASE, "canonical_xyz.npz")  # xyz for --snapshot 3D scatter
+REFERENCE_VTU = os.path.join(DATA_BASE, "canonical.vtu")      # mesh (cells) for --vtu-out
+
+# train / val / test split (by case index order; rest after train+val = test)
+N_TRAIN, N_VAL = 95, 5
+
+# model architecture
+WIDTH, DEPTH = 300, 4
+
+# optimization
+EPOCHS, BATCH_SIZE, LR, LR_SCHEDULED = 5000, 24, 5e-4, False
+PATIENCE = 500                                         # early stop: epochs with no val improvement (0 = off)
+GRAD_CHECKPOINT = False                                # recompute trunk in backward — bounds memory for many frames
+SEED = 42
+DEVICE = None                                          # None -> auto (cuda if available)
+
+# inference outputs — all opt-in. Evaluation is on for --test-model, or --eval for --infer.
+SNAPSHOT = False                                       # V_m(t) traces + 3D V_m/AT scatter SVGs
+VTU_OUT = False                                        # predicted V_m .vtu+.pvd series (needs --mesh)
+N_VIZ = 2                                              # default cases rendered for --snapshot/--vtu-out (first N; CLI selects by case index)
+COLOR_BAR = False                                      # standalone colorbars
+SAVE = False                                           # write predictions.npz
+
+# fixed internals (rarely changed; no CLI flag)
+CHUNK_FRAMES = 25                                      # trunk frames evaluated per forward chunk
+AT_THRESHOLD_MV = -10.0                                # activation = first upward crossing
+# (V_m / AT colour scales live in viz.py, next to the rendering that uses them)
 
 
-def _init_plot_worker(xyz):
-    global _WORKER_XYZ
-    _WORKER_XYZ = xyz
-    import matplotlib
-    matplotlib.use('Agg')
+def parse_args():
+    p = argparse.ArgumentParser(description="Geo-DONet (clean) — train / test / infer")
+
+    # ── mode (mutually exclusive; default = train) ──
+    mode = p.add_mutually_exclusive_group()
+    mode.add_argument("--test-model", action="store_true",
+                      help="forward pass on the test split + evaluate against GT")
+    mode.add_argument("--infer", action="store_true",
+                      help="forward pass on all cases of --data-path (add --eval to score)")
+
+    # ── training + model (defaults from the CONFIGURATION block) ──
+    p.add_argument("--epochs", type=int, default=EPOCHS)
+    p.add_argument("--batch-size", type=int, default=BATCH_SIZE)
+    p.add_argument("--lr", type=float, default=LR, help="learning rate (schedule start)")
+    p.add_argument("--lr-scheduled", action=argparse.BooleanOptionalAction, default=LR_SCHEDULED,
+                   help="linearly decay LR from --lr to 0.1x over all epochs")
+    p.add_argument("--patience", type=int, default=PATIENCE,
+                   help="early stop after this many epochs with no val improvement (0 = off)")
+    p.add_argument("--grad-checkpoint", action=argparse.BooleanOptionalAction, default=GRAD_CHECKPOINT,
+                   help="recompute the trunk in backward to bound GPU memory for many frames "
+                        "(f301/f601); ~1.3x slower, identical result. Needed when frames OOM.")
+    p.add_argument("--width", type=int, default=WIDTH)
+    p.add_argument("--depth", type=int, default=DEPTH)
+    p.add_argument("--seed", type=int, default=SEED)
+    p.add_argument("--device", type=str, default=DEVICE, help="cuda/cpu (default: auto)")
+    p.add_argument("--model-path", type=str, default=None, metavar="PATH",
+                   help="checkpoint path. train: output (default CheckPts/<auto-name>.pt); "
+                        "test/infer: checkpoint to load (required)")
+
+    # ── data + split (shared by all modes) ──
+    p.add_argument("--data-path", dest="data_file", type=str, default=None, metavar="PATH",
+                   help=f"npz: absolute path or a bare name under DATA_BASE (default {DATA_FILE})")
+    p.add_argument("--n-train", type=int, default=N_TRAIN, help="train split size")
+    p.add_argument("--n-val", type=int, default=N_VAL, help="val split size (rest = test)")
+    p.add_argument("--train-data", type=str, default=None, metavar="PATH",
+                   help="npz the normalizer is rebuilt from each run, first --n-train cases "
+                        "(default: the --data-path npz for --test-model, else DATA_FILE for --infer)")
+    p.add_argument("--frame-step", type=int, default=FRAME_STEP, metavar="K",
+                   help="stride the npz time axis by K on load (2 -> f301 from the f601 npz, "
+                        "5 -> f121). default 1 = all frames")
+
+    # ── inference outputs (all opt-in) ──
+    p.add_argument("--cases", type=str, default=None, metavar="SEL",
+                   help="cases to run inference on: all|train|val|test, or global indices "
+                        "like 100 / 100,101 (default: test for --test-model, all for --infer)")
+    p.add_argument("--eval", action=argparse.BooleanOptionalAction, default=False,
+                   help="(--infer only) compute metrics vs GT; errors if GT absent. "
+                        "--test-model always evaluates.")
+    p.add_argument("--snapshot", action=argparse.BooleanOptionalAction, default=SNAPSHOT,
+                   help="V_m(t) traces + 3D V_m/AT scatter SVGs (3D needs --reference-xyz)")
+    p.add_argument("--vtu-out", action=argparse.BooleanOptionalAction, default=VTU_OUT,
+                   help="predicted V_m .vtu+.pvd series per case (needs --mesh)")
+    p.add_argument("--n-viz", type=str, default=None, metavar="IDX|all",
+                   help="cases to render for --snapshot/--vtu-out: comma-separated global case "
+                        "indices (e.g. 116 or 100,116), or 'all'. default: first 2")
+    p.add_argument("--mesh", type=str, default=REFERENCE_VTU, metavar="PATH",
+                   help="reference .vtu (points + tetra cells) for --vtu-out")
+    p.add_argument("--reference-xyz", type=str, default=REFERENCE_XYZ, metavar="PATH",
+                   help="cartesian xyz npz (key 'cartesian_coords') for --snapshot 3D scatter")
+    p.add_argument("--color-bar", dest="color_bar", action=argparse.BooleanOptionalAction,
+                   default=COLOR_BAR, help="save standalone colorbars")
+    p.add_argument("--save", action=argparse.BooleanOptionalAction, default=SAVE,
+                   help="write the full predictions.npz")
+    p.add_argument("--out-dir", type=str, default=None,
+                   help="override the output dir (default Predictions/<ckpt stem>)")
+    return p.parse_args()
 
 
-def _render_scatter_svg(task):
-    values, cmap, vmin, vmax, out_path = task
-    import matplotlib.pyplot as plt
-    fig = plt.figure(figsize=(6, 6))
-    fig.patch.set_alpha(0.0)
-    ax = fig.add_subplot(111, projection='3d')
-    ax.patch.set_alpha(0.0)
-    ax.scatter(_WORKER_XYZ[:, 0], _WORKER_XYZ[:, 1], _WORKER_XYZ[:, 2],
-               c=values, cmap=cmap, s=1,
-               vmin=vmin, vmax=vmax, rasterized=True)
-    ax.set_axis_off()
-    plt.tight_layout()
-    plt.savefig(out_path, format='svg', dpi=300, bbox_inches='tight',
-                transparent=True)
-    plt.close()
-
-DATA_BASE = "/home/users/nus/e1590340/scratch/Mengxiao_20260212_VTK_Merged_ED_CSV"
+def resolve_data_path(data_file):
+    """None -> DATA_BASE/DATA_FILE; absolute -> as-is; bare name -> under DATA_BASE."""
+    if data_file is None:
+        return os.path.join(DATA_BASE, DATA_FILE)
+    return data_file if os.path.isabs(data_file) else os.path.join(DATA_BASE, data_file)
 
 
-def set_seed(seed=42):
+def checkpoint_stem(model_path):
+    """experiment_name for a checkpoint: drop the directory, the .pt suffix, and a
+    leading 'model_chkpts_' (legacy naming). Drives Predictions/<stem>/.
+    e.g. CheckPts/model_chkpts_geo_donet_5000ep_w300_lrsched.pt -> geo_donet_5000ep_w300_lrsched"""
+    base = os.path.splitext(os.path.basename(model_path))[0]
+    return base[len("model_chkpts_"):] if base.startswith("model_chkpts_") else base
+
+
+def subsample_frames(npz_dict, frame_step):
+    """Stride the time axis (vm + time) of a loaded npz dict by frame_step; theta/coords
+    are time-independent and untouched. frame_step <= 1 is a no-op. Lets the f601 npz
+    stand in for f301 (K=2) or f121 (K=5) without a separate file."""
+    if frame_step <= 1:
+        return npz_dict
+    out = dict(npz_dict)
+    if out.get("time") is not None:
+        out["time"] = out["time"][::frame_step]
+    if out.get("vm") is not None:
+        out["vm"] = out["vm"][..., ::frame_step]
+    return out
+
+
+def set_seed(seed):
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
     np.random.seed(seed)
-    random.seed(seed)
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
 
 
-def precompute_trunk_chunks(coords, time_points, chunk_size, device):
-    """
-    Precompute (M*T_c, D+1) trunk input grids for all temporal chunks, where
-    D = coords.shape[1] (4 for Cobiveco, 3 for xyz).
-    Returns: list of (M*T_c, D+1) tensors on device.
-    """
-    M, D = coords.shape
-    T = len(time_points)
-    chunks = []
-    for t_start in range(0, T, chunk_size):
-        t_end = min(t_start + chunk_size, T)
-        T_c = t_end - t_start
-        coords_rep = coords.unsqueeze(1).expand(M, T_c, D).reshape(M * T_c, D)
-        time_rep = time_points[t_start:t_end].unsqueeze(0).expand(M, T_c).reshape(M * T_c, 1)
-        chunks.append(torch.cat([coords_rep, time_rep], dim=1))
-    return chunks
+# ════════════════════════════ training ════════════════════════════
+def train(args, device):
+    def to_device(array):
+        return torch.tensor(array, dtype=torch.float32, device=device)
 
-
-def chunked_forward(model, f_geo, trunk_chunks, M):
-    """
-    Forward pass with precomputed temporal chunks.
-    f_geo:        (N, geo_modes) — geometry branch input
-    trunk_chunks: list of (M*T_c, 5) precomputed trunk grids on device
-    M:            number of spatial nodes
-    Returns: (N, M, T)
-    """
-    N = f_geo.shape[0]
-
-    # Geometry branch — compute once
-    y_br = model._branch_g(f_geo)  # (N, p)
-
-    outputs = []
-    for xt_chunk in trunk_chunks:
-        T_c = xt_chunk.shape[0] // M
-        y_tr = model.encode_trunk(xt_chunk)  # (M*T_c, p)
-        y_out = torch.einsum("np,qp->nq", y_br, y_tr)  # (N, M*T_c)
-        outputs.append(y_out.reshape(N, M, T_c))
-
-    return torch.cat(outputs, dim=2)  # (N, M, T)
-
-
-def main():
-    args = ParseArgument()
-    set_seed(args.seed)
-
-    device = args.device
-    epochs = args.epochs
-    test_model = args.test_model
-    width = args.width
-    batch_size = args.batch_size
-
-    # --- Configuration ---
-    num_geomode = 60
-    dim_br_geo = [num_geomode] + [width] * 4  # branch: theta → (N, width)
-
-    # Trunk dimension: 4 (Cobiveco) or 3 (xyz), plus 1 for time
-    trunk_spatial_dim = 3 if args.trunk == 'xyz' else 4
-    dim_tr = [trunk_spatial_dim + 1] + [width] * 4   # trunk: (coords, t)
-
-    learning_rate = 0.001 if args.lr_schedule else 0.0005
-    frame_step = 1  # data already subsampled at packaging time
-    time_chunk_size = 25  # frames per chunk during forward pass
-
-    lr_tag = '_lrsched' if args.lr_schedule else ''
-    trunk_tag = '' if args.trunk == 'cobiveco' else f'_{args.trunk}'
-    # Seed tag is omitted for seed=42 to keep the historical run path stable;
-    # any other seed gets an explicit tag so checkpoints don't collide.
-    seed_tag = '' if args.seed == 42 else f'_seed{args.seed}'
-    save_directory = f'geo_donet_{epochs}ep_w{width}{lr_tag}{trunk_tag}{seed_tag}'
-
-    dump_test = f'./Predictions/{save_directory}/Test/'
-    dump_train = f'./Predictions/{save_directory}/Train/'
-    model_path = args.model_path or f'CheckPts/model_chkpts_{save_directory}.pt'
-    os.makedirs(dump_test, exist_ok=True)
-    os.makedirs(dump_train, exist_ok=True)
-    os.makedirs('CheckPts', exist_ok=True)
-
-    ## Load Dataset
-    data_path = os.path.join(DATA_BASE, "geo_donet_data_f121.npz")
+    # ── data ──────────────────────────────────────────────────────────────
+    data_path = resolve_data_path(args.data_file)
     if not os.path.exists(data_path):
-        print(f"ERROR: {data_path} not found.")
-        print("Run: python package_training_data.py --frame-step 5")
-        return
+        raise SystemExit(f"data not found: {data_path}")
+    data = subsample_frames(load_dataset(data_path), args.frame_step)
+    theta, coords, vm, time = data["theta"], data["coords"], data["vm"], data["time"]
+    n_cases, n_nodes, n_frames = vm.shape
+    train_idx, val_idx, test_idx = split_indices(n_cases, args.n_train, args.n_val)
+    print(f"data: {data_path} (frame-step {args.frame_step})\n  {n_cases} cases, {n_nodes} nodes, "
+          f"{n_frames} frames | {len(train_idx)} train / {len(val_idx)} val "
+          f"({len(test_idx)} test held out)")
 
-    dataset = np.load(data_path, allow_pickle=True)
-    theta = dataset['theta'][:, :num_geomode].astype(np.float32)  # (125, 60)
-    cobiveco_coords = dataset['coords'].astype(np.float32)         # (50797, 4)
-    vm_all = dataset['vm'].astype(np.float32)                      # (125, 50797, T_full)
-    time_ms = dataset['time'].astype(np.float32)                   # (T_full,)
-    case_names = dataset['case_names']
+    # fit normalization on the train split only, then load just the splits we train
+    # on. Test is never normalized or moved to the device — it is an inference input.
+    normalizer = Normalizer(theta[train_idx], vm[train_idx], coords, time)
+    theta_train = to_device(normalizer.theta(theta[train_idx]))
+    vm_train = to_device(normalizer.vm(vm[train_idx]))
+    theta_val = to_device(normalizer.theta(theta[val_idx]))
+    vm_val = to_device(normalizer.vm(vm[val_idx]))
+    coords_norm = to_device(normalizer.coords(coords))      # (n_nodes, coord_dim)
+    time_norm = to_device(normalizer.time(time))            # (n_frames,)
+    trunk_chunks = build_trunk_chunks(coords_norm, time_norm, CHUNK_FRAMES)
 
-    # Trunk coordinate choice: 4D Cobiveco or 3D Cartesian xyz of the canonical mesh
-    if args.trunk == 'xyz':
-        dimon_path = os.path.join(os.path.dirname(__file__), "..",
-                                  "DIMON_training_data_healthy.npz")
-        dimon_data = np.load(dimon_path)
-        coords = dimon_data['cartesian_coords'].astype(np.float32)  # (50797, 3)
-        print(f"Trunk: 3D Cartesian xyz from {dimon_path}")
-    else:
-        coords = cobiveco_coords                                   # (50797, 4)
-        print("Trunk: 4D Cobiveco (ab, rt, tm, tv)")
+    # ── model ─────────────────────────────────────────────────────────────
+    model = GeoDONet(geo_dim=theta.shape[1], coord_dim=coords.shape[1],
+                     width=args.width, depth=args.depth).to(device)
+    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+    scheduler = LinearLR(optimizer, 1.0, 0.1, args.epochs) if args.lr_scheduled else None
+    n_parameters = sum(p.numel() for p in model.parameters())
+    print(f"model: GeoDONet w{args.width} d{args.depth} | {n_parameters:,} params | {device}")
 
-    # Subsample time if needed
-    vm_all = vm_all[:, :, ::frame_step]
-    time_ms = time_ms[::frame_step]
+    # output paths: checkpoint (best-val weights) -> CheckPts/<name>.pt;
+    # loss log + curve -> Predictions/<name>/.  experiment_name = checkpoint stem.
+    default_name = f"geodonet_w{args.width}_d{args.depth}_{args.epochs}ep"
+    default_name += "_lrsched" if args.lr_scheduled else ""
+    default_name += f"_f{n_frames}" if args.frame_step != 1 else ""
+    default_name += "" if args.seed == SEED else f"_seed{args.seed}"
+    checkpoint_path = args.model_path or os.path.join("CheckPts", f"{default_name}.pt")
+    experiment_name = checkpoint_stem(checkpoint_path)
+    os.makedirs(os.path.dirname(checkpoint_path) or ".", exist_ok=True)
+    pred_dir = os.path.join("Predictions", experiment_name)
+    os.makedirs(pred_dir, exist_ok=True)
+    print(f"checkpoint -> {checkpoint_path} | logs -> {pred_dir}/")
 
-    n_total, n_pts, n_time = vm_all.shape
-    print(f"Data: {n_total} cases, {n_pts} nodes, {n_time} time steps")
-    print(f"Time range: [{time_ms[0]:.0f}, {time_ms[-1]:.0f}] ms, step={time_ms[1]-time_ms[0]:.0f} ms")
-
-    # Split
-    num_train = 95
-    num_val = 5
-    num_test = n_total - num_train - num_val
-    print(f"Split: {num_train} train / {num_val} val / {num_test} test")
-
-    f_train = theta[:num_train]
-    vm_train_raw = vm_all[:num_train]
-    f_val = theta[num_train:num_train + num_val]
-    vm_val_raw = vm_all[num_train:num_train + num_val]
-    f_test = theta[num_train + num_val:]
-    vm_test_raw = vm_all[num_train + num_val:]
-
-    ## Normalization
-    # Trunk spatial: per-feature min-max (same recipe for Cobiveco and xyz)
-    coords_t = torch.tensor(coords, dtype=torch.float).to(device)
-    x_min = coords_t.min(dim=0, keepdim=True)[0]
-    x_max = coords_t.max(dim=0, keepdim=True)[0]
-    coords_norm = (coords_t - x_min) / (x_max - x_min + 1e-8)
-
-    # Time: normalize to [0, 1]
-    t_min, t_max = time_ms.min(), time_ms.max()
-    time_norm = (time_ms - t_min) / (t_max - t_min + 1e-8)
-    time_t = torch.tensor(time_norm, dtype=torch.float).to(device)
-
-    # Geometry: z-score
-    f_mean, f_std = f_train.mean(axis=0), f_train.std(axis=0)
-    f_std[f_std < 1e-8] = 1.0
-    f_train_norm = (f_train - f_mean) / f_std
-    f_val_norm = (f_val - f_mean) / f_std
-    f_test_norm = (f_test - f_mean) / f_std
-
-    # V_m: min-shift + std-scale (training stats only)
-    vm_mean = vm_train_raw.min()
-    vm_std = vm_train_raw.std()
-    vm_train_norm = (vm_train_raw - vm_mean) / vm_std
-    vm_val_norm = (vm_val_raw - vm_mean) / vm_std
-    vm_test_norm = (vm_test_raw - vm_mean) / vm_std
-
-    ## Tensors
-    f_train_tensor = torch.tensor(f_train_norm, dtype=torch.float).to(device)
-    f_val_tensor = torch.tensor(f_val_norm, dtype=torch.float).to(device)
-    f_test_tensor = torch.tensor(f_test_norm, dtype=torch.float).to(device)
-
-    # V_m targets: 95 × 50797 × 121 × 4 bytes ≈ 2.3 GB — fits on A100 40GB
-    vm_train_tensor = torch.tensor(vm_train_norm, dtype=torch.float).to(device)
-    vm_val_tensor = torch.tensor(vm_val_norm, dtype=torch.float).to(device)
-    vm_test_tensor = torch.tensor(vm_test_norm, dtype=torch.float).to(device)
-
-    # Precompute trunk chunks once (avoids rebuilding every forward pass)
-    print("Precomputing trunk chunks...", flush=True)
-    trunk_chunks = precompute_trunk_chunks(coords_norm, time_t,
-                                           time_chunk_size, device)
-    print(f"  {len(trunk_chunks)} chunks, {sum(c.shape[0] for c in trunk_chunks)} total trunk points")
-
-    model = opnn(dim_br_geo, dim_tr).to(device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-
-    if args.lr_schedule:
-        from torch.optim.lr_scheduler import LinearLR
-        # 0.001 → 0.0001 linearly over the full training run
-        scheduler = LinearLR(optimizer, start_factor=1.0, end_factor=0.1,
-                             total_iters=epochs)
-
-    n_params = sum(p.numel() for p in model.parameters())
-    print(f"Model: geo {dim_br_geo}, trunk {dim_tr}, params {n_params:,}")
-    print(f"Temporal chunks: {time_chunk_size} frames/chunk")
-
-    if test_model == 0:
-        print(f"--- Starting Training ---", flush=True)
-
-        train_loss_his, val_loss_his, test_loss_his = [], [], []
-        best_val_loss = float('inf')
-
-        # Simple index-based batching (no DataLoader to control memory)
-        train_indices = np.arange(num_train)
-
-        tic = timer.time()
-        for epoch in range(epochs):
+    # ── train (loss log written incrementally so a wall-killed run keeps its log) ──
+    history = {"train": [], "val": []}
+    best_val_mse = float("inf")
+    epochs_since_improve = 0
+    train_order = np.arange(len(train_idx))
+    start_time = timer.time()
+    with open(os.path.join(pred_dir, "loss.txt"), "w") as loss_log:
+        loss_log.write("# epoch\ttrain_mse\tval_mse\n")
+        for epoch in range(args.epochs):
             model.train()
-            np.random.shuffle(train_indices)
-            epoch_loss = 0.0
-            n_batches = 0
-
-            for b_start in range(0, num_train, batch_size):
-                b_idx = train_indices[b_start:b_start + batch_size]
-                b_f = f_train_tensor[b_idx]
-                b_vm = vm_train_tensor[b_idx]  # already on GPU
-
+            np.random.shuffle(train_order)
+            running_loss, n_batches = 0.0, 0
+            for batch_start in range(0, len(train_order), args.batch_size):
+                batch = train_order[batch_start:batch_start + args.batch_size]
+                loss = mse(chunked_forward(model, theta_train[batch], trunk_chunks, n_nodes,
+                                           use_checkpoint=args.grad_checkpoint),
+                           vm_train[batch])
                 optimizer.zero_grad()
-                pred = chunked_forward(model, b_f, trunk_chunks, n_pts)
-                loss = ((pred - b_vm) ** 2).mean()
                 loss.backward()
                 optimizer.step()
-
-                epoch_loss += loss.item()
+                running_loss += loss.item()
                 n_batches += 1
+            if scheduler:
+                scheduler.step()
+            train_mse = running_loss / n_batches
 
-            avg_train_loss = epoch_loss / n_batches
-            train_loss_his.append(avg_train_loss)
-
-            # Validation + Test (test is held out — monitored, never used for
-            # model selection)
             model.eval()
             with torch.no_grad():
-                pred_val = chunked_forward(model, f_val_tensor, trunk_chunks, n_pts)
-                val_loss = ((pred_val - vm_val_tensor) ** 2).mean().item()
-                val_loss_his.append(val_loss)
+                val_mse = mse(chunked_forward(model, theta_val, trunk_chunks, n_nodes),
+                              vm_val).item()
+            history["train"].append(train_mse)
+            history["val"].append(val_mse)
+            loss_log.write(f"{epoch}\t{train_mse:.8f}\t{val_mse:.8f}\n")
 
-                pred_test = chunked_forward(model, f_test_tensor, trunk_chunks, n_pts)
-                test_loss = ((pred_test - vm_test_tensor) ** 2).mean().item()
-                test_loss_his.append(test_loss)
+            if val_mse < best_val_mse:
+                best_val_mse = val_mse
+                epochs_since_improve = 0
+                torch.save({"model_state_dict": model.state_dict()}, checkpoint_path)
+            else:
+                epochs_since_improve += 1
 
-            if val_loss < best_val_loss:
-                best_val_loss = val_loss
-                torch.save({'model_state_dict': model.state_dict()}, model_path)
-
-            if args.lr_schedule:
-                scheduler.step()
+            if args.patience > 0 and epochs_since_improve >= args.patience:
+                print(f"early stop at epoch {epoch}: no val improvement for "
+                      f"{args.patience} epochs (best val {best_val_mse:.6f})", flush=True)
+                break
 
             if epoch % 10 == 0:
-                elapsed = timer.time() - tic
-                eta = elapsed / (epoch + 1) * (epochs - epoch - 1)
-                print(f'Epoch: {epoch}/{epochs} | Train: {avg_train_loss:.6f} | '
-                      f'Val: {val_loss:.6f} | Test: {test_loss:.6f} | '
-                      f'Best Val: {best_val_loss:.6f} | '
-                      f'ETA: {int(eta//60)}m{int(eta%60)}s',
-                      flush=True)
+                loss_log.flush()
+                elapsed = timer.time() - start_time
+                eta = elapsed / (epoch + 1) * (args.epochs - epoch - 1)
+                print(f"epoch {epoch:5d}/{args.epochs} | train {train_mse:.6f} | "
+                      f"val {val_mse:.6f} | best {best_val_mse:.6f} "
+                      f"| eta {int(eta // 60)}m{int(eta % 60)}s", flush=True)
 
-        total_min = int((timer.time() - tic) / 60)
-        print(f"Total training time: {total_min} min")
+    print(f"done in {int((timer.time() - start_time) / 60)} min | "
+          f"best val {best_val_mse:.6f} | ckpt {checkpoint_path}")
 
-        np.savetxt(f'./Predictions/{save_directory}/train_loss.txt',
-                   np.array(train_loss_his))
-        np.savetxt(f'./Predictions/{save_directory}/val_loss.txt',
-                   np.array(val_loss_his))
-        np.savetxt(f'./Predictions/{save_directory}/test_loss.txt',
-                   np.array(test_loss_his))
+    figure, axes = plt.subplots(figsize=(8, 5))
+    for split, values in history.items():
+        axes.semilogy(values, label=split, alpha=0.8)
+    axes.set_xlabel("epoch"); axes.set_ylabel("MSE"); axes.set_title(experiment_name)
+    axes.legend(); axes.grid(alpha=0.3)
+    figure.tight_layout()
+    figure.savefig(os.path.join(pred_dir, "loss.png"), dpi=150)
+    plt.close(figure)
+    print(f"loss log + curve -> {pred_dir}/loss.txt , {pred_dir}/loss.png")
 
-        # Loss curve
-        fig, ax = plt.subplots(figsize=(8, 5))
-        ax.semilogy(train_loss_his, label='Train', alpha=0.8)
-        ax.semilogy(val_loss_his, label='Val', alpha=0.8)
-        ax.semilogy(test_loss_his, label='Test', alpha=0.8)
-        ax.set_xlabel('Epoch')
-        ax.set_ylabel('MSE Loss')
-        ax.set_title(f'{save_directory}')
-        ax.legend()
-        ax.grid(True, alpha=0.3)
-        plt.tight_layout()
-        plt.savefig(f'./Predictions/{save_directory}/loss_curve.png', dpi=150)
-        plt.close()
-        print(f"Saved loss curve to Predictions/{save_directory}/loss_curve.png")
 
+# ═══════════════════════════ inference ═══════════════════════════
+def fit_normalizer(npz_dict, n_train):
+    """Build the (normalizer, reference) from a training npz — fit on the first
+    n_train cases. Rebuilt every run (checkpoints store only weights), so the
+    --train-data passed here must match what the model was trained on."""
+    if npz_dict["vm"] is None or npz_dict["time"] is None:
+        raise SystemExit("normalizer needs a training npz carrying both 'vm' and 'time' "
+                         "— pass --train-data <training npz>")
+    idx = np.arange(n_train)
+    normalizer = Normalizer(npz_dict["theta"][idx], npz_dict["vm"][idx],
+                            npz_dict["coords"], npz_dict["time"])
+    return normalizer, {"coords": npz_dict["coords"], "time": npz_dict["time"]}
+
+
+def resolve_cases(cases, n_total, n_train, n_val, default_cases):
+    """Index array + label of the cases to run on. `cases` may be None (-> default_cases),
+    a split name (all/train/val/test), or explicit global indices ('100' or '100,101')."""
+    cases = cases or default_cases
+    if cases == "all":
+        return np.arange(n_total), "all"
+    if cases in ("train", "val", "test"):
+        train_idx, val_idx, test_idx = split_indices(n_total, n_train, n_val)
+        selected = {"train": train_idx, "val": val_idx, "test": test_idx}[cases]
+        if len(selected) == 0:
+            raise SystemExit(f"--cases {cases}: empty for {n_total} cases (n_train={n_train}, "
+                             f"n_val={n_val}). If --data-path is already a subset, pass --cases all.")
+        return selected, cases
+    try:
+        idx = np.array([int(token) for token in cases.split(",")], dtype=int)
+    except ValueError:
+        raise SystemExit(f"--cases must be all|train|val|test or comma-separated indices, "
+                         f"got {cases!r}")
+    if idx.min() < 0 or idx.max() >= n_total:
+        raise SystemExit(f"--cases index out of range for {n_total} cases: {cases}")
+    return idx, f"idx[{cases}]"
+
+
+def resolve_viz(n_viz, selected, n_cases):
+    """Positions (into the predicted arrays) to render --snapshot / --vtu-out for.
+    None -> the first N_VIZ selected cases; 'all' -> every selected case; otherwise
+    comma-separated GLOBAL case indices (matching --cases) -> exactly those cases."""
+    if n_viz is None:
+        return np.arange(min(N_VIZ, n_cases))
+    if n_viz == "all":
+        return np.arange(n_cases)
+    try:
+        wanted = [int(part) for part in str(n_viz).split(",")]
+    except ValueError:
+        raise SystemExit(f"--n-viz must be 'all' or comma-separated case indices, got {n_viz!r}")
+    positions = []
+    for case in wanted:
+        hits = np.where(selected == case)[0]
+        if len(hits) == 0:
+            raise SystemExit(f"--n-viz {case}: not in the selected set "
+                             f"({int(selected.min())}..{int(selected.max())}); adjust --cases")
+        positions.append(int(hits[0]))
+    return np.array(positions, dtype=int)
+
+
+def load_model(model_path, device):
+    """One load path for any checkpoint: read weights, remap legacy keys if needed,
+    infer the architecture from the weight shapes, build + load. Returns (model, config)."""
+    raw = torch.load(model_path, map_location=device, weights_only=False)
+    state_dict = raw["model_state_dict"] if "model_state_dict" in raw else raw
+    if is_legacy_state_dict(state_dict):
+        state_dict = remap_legacy_state_dict(state_dict)
+    config = config_from_state_dict(state_dict)
+    model = build_model(config).to(device)
+    model.load_state_dict(state_dict)
+    model.eval()
+    return model, config
+
+
+def infer(args, device, test_mode):
+    """test_mode=True (--test-model): test split + evaluate. test_mode=False (--infer):
+    all cases; evaluate only if --eval. Outputs are opt-in (--snapshot/--vtu-out/
+    --color-bar/--save); metrics always print when evaluating."""
+    if not args.model_path:
+        raise SystemExit("inference requires --model-path PATH")
+    do_eval = test_mode or args.eval
+    default_cases = "test" if test_mode else "all"
+
+    # tee console output into a log; written to out_dir/test_log.txt when evaluating
+    log_lines = []
+    def emit(message=""):
+        print(message)
+        log_lines.append(message)
+
+    model, config = load_model(args.model_path, device)
+    emit(f"model: GeoDONet {config} | {device}")
+
+    # input cases to predict on (theta + Cobiveco required; V_m / time optional)
+    data_path = resolve_data_path(args.data_file)
+    inputs = subsample_frames(load_inputs(data_path), args.frame_step)
+
+    # normalizer + reference rebuilt from a training npz every run. Source: explicit
+    # --train-data, else the eval npz for --test-model (it IS the training set) or
+    # DATA_FILE for --infer (--data-path may be unseen hearts). Reuse the already-loaded
+    # inputs when that source is --data-path and it carries GT.
+    if args.train_data is not None:
+        train_path = resolve_data_path(args.train_data)
     else:
-        # --- Evaluation ---
-        checkpoint = torch.load(model_path, map_location=device, weights_only=True)
-        model.load_state_dict(checkpoint['model_state_dict'])
-        model.eval()
+        train_path = data_path if test_mode else resolve_data_path(None)
+    train_npz = (inputs if train_path == data_path and inputs["vm"] is not None
+                 else subsample_frames(load_inputs(train_path), args.frame_step))
+    normalizer, reference = fit_normalizer(train_npz, args.n_train)
+    reference_time = np.asarray(reference["time"], dtype=np.float32)
+    emit(f"normalizer rebuilt from {os.path.basename(train_path)} (first {args.n_train} cases)")
 
-        print("--- Generating Evaluation ---")
+    # ── select cases ──
+    time_ms = inputs["time"] if inputs["time"] is not None else reference_time
+    selected, cases_name = resolve_cases(args.cases, inputs["theta"].shape[0],
+                                         args.n_train, args.n_val, default_cases)
+    theta, coords = inputs["theta"][selected], inputs["coords"]
+    truth = inputs["vm"][selected] if inputs["vm"] is not None else None
+    case_names = inputs["case_names"][selected] if inputs["case_names"] is not None else None
+    n_cases, n_nodes = theta.shape[0], coords.shape[0]
+    labels = [str(case_names[c]) if case_names is not None else f"case{int(selected[c])}"
+              for c in range(n_cases)]
+    emit(f"{'test-model' if test_mode else 'infer'}: {n_cases} cases ({cases_name}), "
+         f"{n_nodes} nodes, {len(time_ms)} frames | "
+         f"GT {'present' if truth is not None else 'absent'} | {device}")
+    if do_eval and truth is None:
+        raise SystemExit("evaluation needs ground-truth V_m in --data-path "
+                         "(--test-model always evaluates; for --infer, drop --eval)")
 
-        with torch.no_grad():
-            # Predict test set in single-heart chunks to save memory
-            # Warm up GPU (first call has overhead)
-            _ = chunked_forward(model, f_test_tensor[:1], trunk_chunks, n_pts)
+    # ── predict per case (bounded memory), timed; denormalize to physical mV ──
+    to_device = lambda array: torch.tensor(array, dtype=torch.float32, device=device)
+    trunk_chunks = build_trunk_chunks(to_device(normalizer.coords(coords)),
+                                      to_device(normalizer.time(time_ms)), CHUNK_FRAMES)
+    theta_norm = to_device(normalizer.theta(theta))
+    is_cuda = str(device).startswith("cuda")
+    preds, infer_times = [], []
+    with torch.no_grad():
+        if is_cuda:                       # warm up — the first call carries fixed CUDA overhead
+            chunked_forward(model, theta_norm[:1], trunk_chunks, n_nodes)
             torch.cuda.synchronize()
-
-            all_pred = []
-            infer_times = []
-            for i in range(num_test):
-                f_i = f_test_tensor[i:i + 1]
+        for i in range(n_cases):
+            if is_cuda:
                 torch.cuda.synchronize()
-                t0 = timer.time()
-                pred_i = chunked_forward(model, f_i, trunk_chunks, n_pts)
+            t0 = timer.time()
+            out = chunked_forward(model, theta_norm[i:i + 1], trunk_chunks, n_nodes)
+            if is_cuda:
                 torch.cuda.synchronize()
-                t1 = timer.time()
-                infer_times.append(t1 - t0)
-                all_pred.append(to_numpy(pred_i[0]))  # (M, T)
-            pred_test = np.stack(all_pred)  # (num_test, M, T)
+            infer_times.append(timer.time() - t0)
+            preds.append(to_numpy(out[0]))
+    pred = normalizer.vm_inverse(np.stack(preds)).astype(np.float32)   # (n_cases, n_nodes, n_frames)
+    infer_times = np.asarray(infer_times, dtype=np.float64)
+    emit(f"inference time: {infer_times.mean() * 1000:.1f} ± {infer_times.std() * 1000:.1f} ms/case "
+         f"(total {infer_times.sum():.2f} s for {n_cases} cases)")
 
-            print(f"Inference time per case: {np.mean(infer_times)*1000:.1f} +/- "
-                  f"{np.std(infer_times)*1000:.1f} ms "
-                  f"(total {np.sum(infer_times):.2f} s for {num_test} cases)")
+    out_dir = args.out_dir or os.path.join("Predictions", checkpoint_stem(args.model_path))
 
-            # Denormalize
-            pred_phy = pred_test * vm_std + vm_mean
+    # ── evaluation (metrics always print; arrays go into predictions.npz if --save) ──
+    at_pred = at_true = None
+    metrics = {}
+    if do_eval:
+        vm_rel, vm_mae = vm_rel_l2_mae(pred, truth)
+        at_pred = np.stack([activation_time(pred[c], time_ms, AT_THRESHOLD_MV) for c in range(n_cases)])
+        at_true = np.stack([activation_time(truth[c], time_ms, AT_THRESHOLD_MV) for c in range(n_cases)])
+        at_rel, at_mae = at_rel_l2_mae(at_pred, at_true)
+        emit(format_metric_table("V_m", case_names, vm_rel, vm_mae, "Rel L2", "MAE (mV)"))
+        emit(format_metric_table("AT", case_names, at_rel, at_mae, "Rel L2", "MAE (ms)"))
+        emit(format_metric_summary(n_cases, cases_name, vm_rel, vm_mae, at_rel, at_mae))
+        metrics = dict(vm_rel_l2=vm_rel, vm_mae=vm_mae, at_pred=at_pred, at_true=at_true,
+                       at_rel_l2=at_rel, at_mae=at_mae)
+        os.makedirs(out_dir, exist_ok=True)
+        log_path = os.path.join(out_dir, "test_log.txt")
+        with open(log_path, "w") as log_file:
+            log_file.write("\n".join(log_lines) + "\n")
+        print(f"  test log -> {log_path}")
 
-            # Per-case error metrics
-            print(f"\n{'Case':<35} {'Rel L2':>10} {'MAE (mV)':>10}")
-            print("-" * 58)
-            l2_errors, mae_errors = [], []
-            for i in range(num_test):
-                u_p = pred_phy[i]       # (M, T)
-                u_t = vm_test_raw[i]    # (M, T)
-                l2 = np.linalg.norm(u_p - u_t) / np.linalg.norm(u_t)
-                mae = np.mean(np.abs(u_p - u_t))
-                l2_errors.append(l2)
-                mae_errors.append(mae)
-                print(f"{case_names[num_train + num_val + i]:<35}"
-                      f" {l2:10.4f} {mae:10.2f}")
+    # cases to render for --snapshot / --vtu-out (first --n-viz, or chosen case indices)
+    viz_idx = (resolve_viz(args.n_viz, selected, n_cases)
+               if (args.snapshot or args.vtu_out) else np.array([], dtype=int))
 
-            print("-" * 58)
-            print(f"{'Mean':<35} {np.mean(l2_errors):10.4f} "
-                  f"{np.mean(mae_errors):10.2f}")
-            print(f"{'Std':<35} {np.std(l2_errors):10.4f} "
-                  f"{np.std(mae_errors):10.2f}")
+    # ── --snapshot: V_m(t) traces (xyz-free) + 3D V_m/AT scatter SVGs (needs --reference-xyz) ──
+    if args.snapshot:
+        traces_root = os.path.join(out_dir, "traces")
+        for c in viz_idx:
+            case_dir = os.path.join(traces_root, labels[c]); os.makedirs(case_dir, exist_ok=True)
+            save_vm_traces(pred[c], None if truth is None else truth[c], time_ms,
+                           os.path.join(case_dir, "traces.png"))
+        print(f"  traces ({len(viz_idx)} cases) -> {traces_root}/<case>")
+        if os.path.exists(args.reference_xyz):
+            xyz = np.load(args.reference_xyz)["cartesian_coords"].astype(np.float32)
+            if xyz.shape[0] != n_nodes:
+                raise SystemExit(f"reference xyz has {xyz.shape[0]} nodes != {n_nodes} predicted")
+            if at_pred is None:        # AT not computed in the eval block (e.g. --infer w/o --eval)
+                at_pred = np.stack([activation_time(pred[c], time_ms, AT_THRESHOLD_MV) for c in range(n_cases)])
+                if truth is not None:
+                    at_true = np.stack([activation_time(truth[c], time_ms, AT_THRESHOLD_MV) for c in range(n_cases)])
+            render_snapshots(out_dir, xyz, pred[viz_idx],
+                             truth[viz_idx] if truth is not None else None,
+                             at_pred[viz_idx],
+                             at_true[viz_idx] if at_true is not None else None,
+                             time_ms, [labels[c] for c in viz_idx])
+        else:
+            print(f"  3D scatter skipped (--reference-xyz not found: {args.reference_xyz})")
 
-            # Plot V_m traces at a few spatial points for first 2 test hearts
-            dimon_data = np.load(os.path.join(
-                os.path.dirname(__file__), "..", "DIMON_training_data_healthy.npz"))
-            cartesian_coords = dimon_data['cartesian_coords']
+    # ── --vtu-out: predicted V_m .vtu+.pvd series per rendered case (+ GT/abserr when GT present) ──
+    if args.vtu_out:
+        if not os.path.exists(args.mesh):
+            raise SystemExit(f"--vtu-out needs a reference mesh (--mesh); not found: {args.mesh}")
+        mesh = meshio.read(args.mesh)
+        points = mesh.points.astype(np.float32)
+        tetra = next((cb.data for cb in mesh.cells if cb.type == "tetra"), None)
+        if tetra is None:
+            raise SystemExit(f"--mesh {args.mesh} has no tetra cells")
+        if points.shape[0] != n_nodes:
+            raise SystemExit(f"--mesh has {points.shape[0]} points != {n_nodes} predicted nodes")
+        tetra = tetra.astype(np.int32)
+        vtu_root = os.path.join(out_dir, "vtu"); os.makedirs(vtu_root, exist_ok=True)
+        for c in viz_idx:
+            fields = {"Vm": pred[c]}
+            if truth is not None:
+                fields["Vm_gt"] = truth[c]
+                fields["Vm_abserr"] = np.abs(truth[c] - pred[c]).astype(np.float32)
+            write_vtu_series(os.path.join(vtu_root, labels[c]), points, tetra, time_ms, fields)
+        print(f"  wrote {len(viz_idx)} V_m .vtu series ({len(time_ms)} frames each) -> {vtu_root}")
 
-            num_viz = min(2, num_test)
-            sample_nodes = np.linspace(0, n_pts - 1, 5, dtype=int)  # 5 nodes
-            time_axis = time_ms  # physical ms
+    # ── --color-bar ──
+    if args.color_bar:
+        os.makedirs(out_dir, exist_ok=True)
+        save_colorbars(out_dir, at_pred, at_true)
 
-            # Shared y-range across GT + Pred so the 3 variants line up.
-            vm_trace_min = float(min(vm_test_raw[:num_viz, sample_nodes, :].min(),
-                                      pred_phy[:num_viz, sample_nodes, :].min()))
-            vm_trace_max = float(max(vm_test_raw[:num_viz, sample_nodes, :].max(),
-                                      pred_phy[:num_viz, sample_nodes, :].max()))
+    # ── --save: full predictions.npz ──
+    if args.save:
+        os.makedirs(out_dir, exist_ok=True)
+        saved = {"pred": pred, "time": time_ms, "case_names": np.asarray(labels),
+                 "infer_time_per_case_s": infer_times}
+        if truth is not None:
+            saved["true"] = truth
+        saved.update(metrics)
+        np.savez_compressed(os.path.join(out_dir, "predictions.npz"), **saved)
+        print(f"  saved predictions.npz -> {out_dir}")
 
-            def _draw_trace_panels(h, traces, out_path):
-                """traces: list of (color, linestyle, lw, array (nodes,T))."""
-                fig, axes = plt.subplots(len(sample_nodes), 1,
-                                         figsize=(10, 2.5 * len(sample_nodes)),
-                                         sharex=True)
-                fig.patch.set_alpha(0.0)
-                for j, node in enumerate(sample_nodes):
-                    ax = axes[j]
-                    ax.patch.set_alpha(0.0)
-                    for color, ls, lw, arr in traces:
-                        ax.plot(time_axis, arr[node, :], color=color,
-                                linestyle=ls, linewidth=lw)
-                    ax.set_ylim(vm_trace_min, vm_trace_max)
-                    ax.set_yticks([])
-                    ax.set_ylabel('')
-                axes[-1].set_xlabel('Time (ms)', fontsize=30)
-                axes[-1].tick_params(axis='x', labelsize=30)
-                plt.tight_layout()
-                plt.savefig(out_path, format='svg',
-                            bbox_inches='tight', transparent=True)
-                plt.close()
+    wrote_files = args.save or args.snapshot or args.vtu_out or args.color_bar
+    print(f"inference complete" + (f" -> {out_dir}" if wrote_files
+                                   else " (metrics only; no files written)"))
 
-            for h in range(num_viz):
-                gt = vm_test_raw[h]
-                pr = pred_phy[h]
-                _draw_trace_panels(
-                    h, [('k', '-', 3.0, gt)],
-                    os.path.join(dump_test, f'vm_traces_heart{h}_GT.svg'))
-                _draw_trace_panels(
-                    h, [('r', '-', 3.0, pr)],
-                    os.path.join(dump_test, f'vm_traces_heart{h}_Pred.svg'))
-                _draw_trace_panels(
-                    h,
-                    [('k', '-', 3.0, gt),
-                     ('r', '--', 2.5, pr)],
-                    os.path.join(dump_test, f'vm_traces_heart{h}_combined.svg'))
 
-            # ── Viz setup: fixed color scales; tasks collected then parallelised
-            num_viz_hearts = min(2, num_test)
-            # Frame selection from --vm-frames "START:END:STEP" (END inclusive, ms)
-            try:
-                vf_start, vf_end, vf_step = (float(x) for x in args.vm_frames.split(':'))
-            except Exception:
-                raise SystemExit(f"--vm-frames must be START:END:STEP, got {args.vm_frames!r}")
-            viz_t_ms = np.arange(vf_start, vf_end + 0.5 * vf_step, vf_step)
-            frame_idx = [int(np.argmin(np.abs(time_ms - t))) for t in viz_t_ms]
-            print(f"V_m snapshot frames: {len(viz_t_ms)} @ t = "
-                  f"{viz_t_ms[0]:.0f}..{viz_t_ms[-1]:.0f} ms (step {vf_step:.0f})")
-
-            vm_min, vm_max = -90.0, 50.0           # mV
-            vm_err_min, vm_err_max = 0.0, 20.0     # mV
-            cmap_vm = 'RdYlBu_r'
-            cmap_at = 'RdYlBu_r'
-            cmap_err = 'Reds'
-
-            plot_tasks = []  # (values, cmap, vmin, vmax, out_path)
-
-            def queue_scatter(values, cmap, vmin, vmax, out_path):
-                plot_tasks.append((np.asarray(values, dtype=np.float32),
-                                   cmap, float(vmin), float(vmax), out_path))
-
-            def save_colorbar(cmap, vmin, vmax, label, out_path,
-                              orientation='vertical', half=False):
-                if orientation == 'vertical':
-                    figsize = (1.2, 2.5) if half else (1.2, 5)
-                else:
-                    figsize = (2.5, 1.2) if half else (5, 1.2)
-                fig, ax = plt.subplots(figsize=figsize)
-                fig.patch.set_alpha(0.0)
-                ax.patch.set_alpha(0.0)
-                norm = plt.Normalize(vmin=vmin, vmax=vmax)
-                sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
-                cb = plt.colorbar(sm, cax=ax, orientation=orientation)
-                cb.set_label(label, fontsize=15)
-                from matplotlib.ticker import MaxNLocator
-                nice = MaxNLocator(nbins=3, steps=[1, 2, 2.5, 5, 10]).tick_values(vmin, vmax)
-                nice = nice[(nice >= vmin) & (nice <= vmax)]
-                cb.set_ticks(nice)
-                cb.ax.tick_params(labelsize=15)
-                plt.tight_layout()
-                plt.savefig(out_path, format='svg', bbox_inches='tight',
-                            transparent=True)
-                plt.close()
-
-            # ── V_m snapshots (per frame, per heart): 3 plots each ───────────
-            if args.skip_snapshots:
-                print("Skipping V_m snapshot rendering (--skip-snapshots)")
-            else:
-                snap_dir = os.path.join(dump_test, "snapshots")
-                os.makedirs(snap_dir, exist_ok=True)
-                print(f"Queuing V_m snapshot tasks -> {snap_dir}")
-
-                for h in range(num_viz_hearts):
-                    for fi in frame_idx:
-                        t_val = time_ms[fi]
-                        u_p = pred_phy[h, :, fi]
-                        u_t = vm_test_raw[h, :, fi]
-                        err = np.abs(u_t - u_p)
-                        tag = f"heart{h}_t{t_val:03.0f}ms"
-                        queue_scatter(u_t, cmap_vm, vm_min, vm_max,
-                                      os.path.join(snap_dir, f"{tag}_GT.svg"))
-                        queue_scatter(u_p, cmap_vm, vm_min, vm_max,
-                                      os.path.join(snap_dir, f"{tag}_Pred.svg"))
-                        queue_scatter(err, cmap_err, vm_err_min, vm_err_max,
-                                      os.path.join(snap_dir, f"{tag}_AbsErr.svg"))
-
-            # ── Activation-time maps (first upward crossing of -10 mV) ───────
-            def compute_at(vm, t_ms, threshold=-10.0):
-                """vm (M, T); returns (M,) AT in ms with linear interpolation.
-                NaN for nodes that never cross the threshold."""
-                crossed = (vm[:, :-1] < threshold) & (vm[:, 1:] >= threshold)
-                any_cross = crossed.any(axis=1)
-                first_idx = np.argmax(crossed, axis=1)
-                at = np.full(vm.shape[0], np.nan, dtype=np.float32)
-                m_idx = np.where(any_cross)[0]
-                i = first_idx[m_idx]
-                v0 = vm[m_idx, i]
-                v1 = vm[m_idx, i + 1]
-                t0 = t_ms[i]
-                t1 = t_ms[i + 1]
-                frac = (threshold - v0) / (v1 - v0 + 1e-12)
-                at[m_idx] = t0 + frac * (t1 - t0)
-                return at
-
-            at_dir = os.path.join(dump_test, "activation_time")
-            os.makedirs(at_dir, exist_ok=True)
-
-            # Compute AT for ALL test hearts (not only viz ones) for metrics
-            at_pred_all = np.stack([compute_at(pred_phy[h], time_ms)
-                                    for h in range(num_test)])
-            at_true_all = np.stack([compute_at(vm_test_raw[h], time_ms)
-                                    for h in range(num_test)])
-
-            # Per-case AT MAE and Rel L2 (over nodes that activated in both)
-            print(f"\n{'AT metrics':<35} {'Rel L2':>10} {'MAE (ms)':>10}")
-            print("-" * 58)
-            at_l2_list, at_mae_list = [], []
-            for h in range(num_test):
-                ap, at = at_pred_all[h], at_true_all[h]
-                valid = np.isfinite(ap) & np.isfinite(at)
-                diff = ap[valid] - at[valid]
-                l2 = np.linalg.norm(diff) / (np.linalg.norm(at[valid]) + 1e-12)
-                mae = float(np.mean(np.abs(diff))) if diff.size else float('nan')
-                at_l2_list.append(float(l2))
-                at_mae_list.append(mae)
-                print(f"{case_names[num_train + num_val + h]:<35}"
-                      f" {l2:10.4f} {mae:10.2f}")
-            print("-" * 58)
-            print(f"{'Mean':<35} {np.mean(at_l2_list):10.4f} "
-                  f"{np.mean(at_mae_list):10.2f}")
-            print(f"{'Std':<35} {np.std(at_l2_list):10.4f} "
-                  f"{np.std(at_mae_list):10.2f}")
-
-            # Global AT color range (over viz hearts) shared with standalone cbar
-            at_viz_stack = np.concatenate(
-                [at_pred_all[h] for h in range(num_viz_hearts)] +
-                [at_true_all[h] for h in range(num_viz_hearts)])
-            at_vmin = float(np.nanmin(at_viz_stack))
-            at_vmax = float(np.nanmax(at_viz_stack))
-            at_err_stack = np.concatenate([
-                np.abs(at_pred_all[h] - at_true_all[h])
-                for h in range(num_viz_hearts)])
-            at_err_vmax = float(np.nanmax(at_err_stack)) if at_err_stack.size else 1.0
-
-            if args.skip_snapshots:
-                print("Skipping AT scatter rendering (--skip-snapshots)")
-            else:
-                print(f"Queuing AT tasks -> {at_dir}")
-                for h in range(num_viz_hearts):
-                    at_pred = at_pred_all[h]
-                    at_true = at_true_all[h]
-                    err = np.abs(at_true - at_pred)
-                    tag = f"heart{h}"
-                    queue_scatter(at_true, cmap_at, at_vmin, at_vmax,
-                                  os.path.join(at_dir, f"{tag}_AT_GT.svg"))
-                    queue_scatter(at_pred, cmap_at, at_vmin, at_vmax,
-                                  os.path.join(at_dir, f"{tag}_AT_Pred.svg"))
-                    queue_scatter(err, cmap_err, 0.0, at_err_vmax,
-                                  os.path.join(at_dir, f"{tag}_AT_AbsErr.svg"))
-
-            # ── Run all scatter tasks in parallel ─────────────────────────────
-            if plot_tasks:
-                n_workers = min(8, (os.cpu_count() or 4))
-                print(f"Rendering {len(plot_tasks)} SVG scatters on "
-                      f"{n_workers} processes ...", flush=True)
-                t0_render = timer.time()
-                with ProcessPoolExecutor(max_workers=n_workers,
-                                         initializer=_init_plot_worker,
-                                         initargs=(cartesian_coords,)) as ex:
-                    list(ex.map(_render_scatter_svg, plot_tasks))
-                print(f"  done in {timer.time() - t0_render:.1f} s")
-
-            # ── Standalone colorbars (shared across all above plots) ─────────
-            cbar_dir = os.path.join(dump_test, "colorbars")
-            os.makedirs(cbar_dir, exist_ok=True)
-            save_colorbar(cmap_vm, vm_min, vm_max, 'V_m (mV)',
-                          os.path.join(cbar_dir, 'cbar_Vm.svg'))
-            save_colorbar(cmap_err, vm_err_min, vm_err_max, '|ΔV_m| (mV)',
-                          os.path.join(cbar_dir, 'cbar_Vm_AbsErr.svg'),
-                          half=True)
-            save_colorbar(cmap_at, at_vmin, at_vmax, 'AT (ms)',
-                          os.path.join(cbar_dir, 'cbar_AT.svg'))
-            save_colorbar(cmap_err, 0.0, at_err_vmax, '|ΔAT| (ms)',
-                          os.path.join(cbar_dir, 'cbar_AT_AbsErr.svg'),
-                          half=True)
-            print(f"Saved colorbars to {cbar_dir}")
-
-            # Save predictions
-            np.savez_compressed(
-                os.path.join(dump_test, "test_predictions.npz"),
-                pred=pred_phy, true=vm_test_raw,
-                at_pred=at_pred_all, at_true=at_true_all,
-                at_rel_l2=np.array(at_l2_list), at_mae=np.array(at_mae_list),
-                case_names=case_names[num_train + num_val:])
-            print(f"\nEvaluation complete. Plots in {dump_test}")
+# ══════════════════════════════ main ══════════════════════════════
+def main():
+    args = parse_args()
+    set_seed(args.seed)
+    device = args.device or ("cuda" if torch.cuda.is_available() else "cpu")
+    if args.test_model:
+        infer(args, device, test_mode=True)
+    elif args.infer:
+        infer(args, device, test_mode=False)
+    else:
+        train(args, device)
 
 
 if __name__ == "__main__":

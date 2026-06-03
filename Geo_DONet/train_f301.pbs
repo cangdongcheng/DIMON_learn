@@ -1,0 +1,32 @@
+#!/bin/bash
+#PBS -N geodonet_f301
+#PBS -l select=1:ngpus=1
+#PBS -l walltime=30:00:00
+#PBS -j oe
+#
+# Train Geo-DONet (clean) on f301 — the f601 npz strided to 2 ms (--frame-step 2),
+# 3000 epochs.   Submit from this folder:   qsub train_f301.pbs
+#
+# Data on disk is geo_donet_data_f601.npz (601 frames, 1 ms); --frame-step 2 loads
+# every 2nd frame -> 301 frames (2 ms), so no separate f301 file is needed.
+#
+# Memory: at 2.5x the frames of f121, the *trunk activations* (which scale with the
+# frame count, not the batch) dominate GPU memory, so --grad-checkpoint recomputes the
+# trunk in backward to keep it on the 48 GB A40 — this is what let the old SIREN f301
+# fit. Batch stays 24: reducing it barely helps memory and adds wall-time (the trunk is
+# re-evaluated per batch). ~20 h on an A40 (checkpointing is ~1.3x slower); 30 h leaves
+# margin so the LR schedule completes (a wall-kill truncates LinearLR).
+
+source ~/load_dimon_env.sh
+cd /home/svu/e1032484/DIMON_learn/Geo_DONet_clean
+
+echo "=== START $(date) ==="
+echo "node: $(hostname)"
+nvidia-smi
+
+#   -> CheckPts/geodonet_w300_d4_3000ep_lrsched_f301.pt
+#   -> Predictions/geodonet_w300_d4_3000ep_lrsched_f301/{loss.txt,loss.png}
+python -u main.py --epochs 3000 --width 300 --batch-size 24 --lr-scheduled \
+    --data-path geo_donet_data_f601.npz --frame-step 2 --grad-checkpoint --device cuda
+
+echo "=== DONE $(date) ==="

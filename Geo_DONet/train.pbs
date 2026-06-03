@@ -1,18 +1,28 @@
 #!/bin/bash
-#PBS -N Geo_DONet
+#PBS -N geodonet_clean
+#PBS -l select=1:ngpus=1
 #PBS -l walltime=14:00:00
-#PBS -l select=1:ncpus=32:ngpus=1:mem=400gb
-#PBS -P personal-e1590340
 #PBS -j oe
+#
+# Train Geo-DONet (clean) on Vanda.   Submit from this folder:   qsub train.pbs
+#
+# Vanda lands GPU jobs in batch_gpu automatically — no -q / -P / ncpus / mem needed.
+# Default GPU is an A40 (sm_86, 48 GB). The baseline below (w300 d4, cobiveco f121,
+# 5000 ep) runs ~10.5 h on an A40; 14 h leaves margin so the LR schedule completes
+# — a wall-kill truncates LinearLR and leaves a suboptimal best-val. If it OOMs,
+# drop --batch-size first.
 
 source ~/load_dimon_env.sh
-cd /home/users/nus/e1590340/cardiac_simulation/DIMON/Geo_DONet
+cd /home/svu/e1032484/DIMON_learn/Geo_DONet_clean
 
 echo "=== START $(date) ==="
-echo "Node: $(hostname)"
+echo "node: $(hostname)"
 nvidia-smi
 
-# --trunk: "cobiveco" (4D ab,rt,tm,tv) or "xyz" (3D Cartesian). Edit here to switch.
-python -u main.py --width 300 --batch-size 24 --epochs 10000 --lr-schedule --device cuda --trunk xyz
+# Defaults (epochs 5000, width 300, depth 4, lr 5e-4, seed 42, data geo_donet_data_f121.npz)
+# live in main.py's CONFIGURATION block; the flags below are this run's overrides.
+#   -> CheckPts/geodonet_w300_d4_5000ep_lrsched.pt
+#   -> Predictions/geodonet_w300_d4_5000ep_lrsched/{loss.txt,loss.png}
+python -u main.py --epochs 5000 --width 300 --batch-size 24 --lr-scheduled --device cuda
 
 echo "=== DONE $(date) ==="
