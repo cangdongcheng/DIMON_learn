@@ -1,0 +1,31 @@
+#!/bin/bash
+#PBS -N siren_ndiff_f301
+#PBS -l select=1:ngpus=1
+#PBS -l walltime=36:00:00
+#PBS -j oe
+#
+# SIREN trunk + signed-Laplacian neighbour-diff loss on f301 (2 ms), scheduled LR
+# 5e-4->5e-5. Same recipe as train_ndiff.pbs, only the temporal resolution changes
+# (f601 strided by 2). Submit:   qsub train_ndiff_f301.pbs
+#   lambda override per job:  qsub -v LAM=3 train_ndiff_f301.pbs
+#
+# Timing: f301 plain SIREN was ~0.46 min/ep; ndiff adds overhead -> ~0.5-0.55 min/ep
+# -> 3000 ep ~= 25-28 h. 36 h leaves margin so the LR schedule completes (a wall-kill
+# before --epochs truncates LinearLR). Trunk grad-checkpointed by default; ndiff adds
+# ~1.8 GB and f301 is 2.5x f121's temporal points — if it OOMs on the A40, drop --batch-size 16.
+
+source ~/load_dimon_env.sh
+cd /home/svu/e1032484/DIMON_learn/Geo_DONet_SIREN
+
+echo "=== START $(date) ==="
+echo "node: $(hostname)"
+nvidia-smi
+
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+
+#   -> CheckPts/geodonet_siren_w300_d4_w0_30_3000ep_lrsched_ndiff${LAM}_f301.pt
+python -u main.py --epochs 3000 --width 300 --batch-size 24 --lr 5e-4 --lr-scheduled \
+    --data-path geo_donet_data_f601.npz --frame-step 2 --omega-0 30 \
+    --ndiff-weight ${LAM:-1.0} --device cuda
+
+echo "=== DONE $(date) ==="

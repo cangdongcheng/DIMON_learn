@@ -1,0 +1,42 @@
+Unloading shared
+  WARNING: Did not unuse /cm/shared/modulefiles
+Loading Python/3.11.3-GCCcore-12.3.0
+  Loading requirement: GCCcore/12.3.0 zlib/1.2.13-GCCcore-12.3.0
+    binutils/2.40-GCCcore-12.3.0 bzip2/1.0.8-GCCcore-12.3.0
+    ncurses/6.4-GCCcore-12.3.0 libreadline/8.2-GCCcore-12.3.0
+    Tcl/8.6.13-GCCcore-12.3.0 SQLite/3.42.0-GCCcore-12.3.0
+    XZ/5.4.2-GCCcore-12.3.0 libffi/3.4.4-GCCcore-12.3.0 OpenSSL/1.1
+[dimon env] python   =Python 3.11.3  (/home/svu/e1032484/venvs/dimon/bin/python)
+[dimon env] torch    =2.1.2+cu121 cuda 12.1
+[dimon env] sklearn  =1.3.2
+[dimon env] cuda gpu =True  (False on login nodes is expected)
+outputs -> Predictions/case0_f121_w300_d4/
+overfitting IMMC001_20150716_merge_000 (frame-step 5) | 50797 nodes, 121 frames, dt=5 ms
+model: GeoDONet w300 d4 | 561,900 params | cuda
+epoch      0/5000 | train MSE 2.578e+00 | best 2.578e+00 | eta 154m28s
+epoch     50/5000 | train MSE 6.945e-01 | best 6.945e-01 | eta 87m49s
+epoch    100/5000 | train MSE 2.482e-01 | best 2.263e-01 | eta 86m58s
+epoch    150/5000 | train MSE 1.914e-01 | best 1.914e-01 | eta 85m53s
+epoch    200/5000 | train MSE 1.937e-01 | best 1.901e-01 | eta 84m35s
+epoch    250/5000 | train MSE 1.818e-01 | best 1.818e-01 | eta 83m53s
+epoch    300/5000 | train MSE 1.949e-01 | best 1.808e-01 | eta 82m52s
+epoch    350/5000 | train MSE 1.793e-01 | best 1.793e-01 | eta 81m52s
+epoch    400/5000 | train MSE 1.757e-01 | best 1.757e-01 | eta 81m11s
+epoch    450/5000 | train MSE 1.719e-01 | best 1.719e-01 | eta 80m28s
+epoch    500/5000 | train MSE 1.668e-01 | best 1.668e-01 | eta 79m41s
+epoch    550/5000 | train MSE 1.628e-01 | best 1.628e-01 | eta 78m44s
+epoch    600/5000 | train MSE 1.590e-01 | best 1.590e-01 | eta 77m53s
+epoch    650/5000 | train MSE 1.562e-01 | best 1.562e-01 | eta 77m4s
+epoch    700/5000 | train MSE 1.557e-01 | best 1.554e-01 | eta 76m5s
+epoch    750/5000 | train MSE 1.519e-01 | best 1.519e-01 | eta 75m14s
+epoch    800/5000 | train MSE 1.477e-01 | best 1.477e-01 | eta 74m25s
+epoch    850/5000 | train MSE 1.457e-01 | best 1.457e-01 | eta 73m29s
+epoch    900/5000 | train MSE 1.374e-01 | best 1.374e-01 | eta 72m38s
+epoch    950/5000 | train MSE 4.554e-01 | best 1.279e-01 | eta 71m47s
+epoch   1000/5000 | train MSE 1.238e-01 | best 1.238e-01 | eta 70m50s
+epoch   1050/5000 | train MSE 1.121e-01 | best 1.121e-01 | eta 69m59s
+epoch   1100/5000 | train MSE 1.027e-01 | best 1.027e-01 | eta 69m8s
+epoch   1150/5000 | train MSE 1.094e-01 | best 9.884e-02 | eta 68m13s
+epoch   1200/5000 | train MSE 9.609e-02 | best 9.609e-02 | eta 67m18s
+epoch   1250/5000 | train MSE 9.019e-02 | best 9.019e-02 | eta 66m27s
+epoch   1300/5000 | train MSE 9.464e-02 | best 8.679e-02 | eta 65m34s

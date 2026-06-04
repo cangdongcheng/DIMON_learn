@@ -1,0 +1,347 @@
+Unloading shared
+  WARNING: Did not unuse /cm/shared/modulefiles
+Loading Python/3.11.3-GCCcore-12.3.0
+  Loading requirement: GCCcore/12.3.0 zlib/1.2.13-GCCcore-12.3.0
+    binutils/2.40-GCCcore-12.3.0 bzip2/1.0.8-GCCcore-12.3.0
+    ncurses/6.4-GCCcore-12.3.0 libreadline/8.2-GCCcore-12.3.0
+    Tcl/8.6.13-GCCcore-12.3.0 SQLite/3.42.0-GCCcore-12.3.0
+    XZ/5.4.2-GCCcore-12.3.0 libffi/3.4.4-GCCcore-12.3.0 OpenSSL/1.1
+[dimon env] python   =Python 3.11.3  (/home/svu/e1032484/venvs/dimon/bin/python)
+[dimon env] torch    =2.1.2+cu121 cuda 12.1
+[dimon env] sklearn  =1.3.2
+[dimon env] cuda gpu =True  (False on login nodes is expected)
+=== START Fri May 29 01:35:51 AM +08 2026 ===
+Node: GN-A40-074
+Fri May 29 01:35:51 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 575.57.08              Driver Version: 575.57.08      CUDA Version: 12.9     |
+|-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA A40                     Off |   00000000:AE:00.0 Off |                    0 |
+|  0%   31C    P8             25W /  300W |       0MiB /  46068MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+                                                                                         
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+Trunk: 4D Cobiveco (ab, rt, tm, tv)
+Data: 125 cases, 50797 nodes, 301 time steps
+Time range: [0, 600] ms, step=2 ms
+Split: 95 train / 5 val / 25 test
+Precomputing trunk chunks...
+  31 chunks, 15289897 total trunk points
+Model: geo [60, 300, 300, 300, 300], trunk [5, 300, 300, 300, 300] (SIREN, omega_0=30.0), params 561,901
+LR: 0.0001 (flat)
+Temporal chunks: 10 frames/chunk
+--- Starting Training ---
+Epoch: 0/3000 | Train: 3.337939 | Val: 2.209058 | Test: 2.231225 | Best Val: 2.209058 | ETA: 1376m55s
+Epoch: 10/3000 | Train: 0.268768 | Val: 0.355578 | Test: 0.282303 | Best Val: 0.355578 | ETA: 1376m1s
+Epoch: 20/3000 | Train: 0.153591 | Val: 0.206289 | Test: 0.180657 | Best Val: 0.206289 | ETA: 1372m33s
+Epoch: 30/3000 | Train: 0.117689 | Val: 0.164267 | Test: 0.141847 | Best Val: 0.164267 | ETA: 1367m41s
+Epoch: 40/3000 | Train: 0.100689 | Val: 0.143599 | Test: 0.120482 | Best Val: 0.143599 | ETA: 1362m43s
+Epoch: 50/3000 | Train: 0.094427 | Val: 0.126285 | Test: 0.111935 | Best Val: 0.126285 | ETA: 1357m38s
+Epoch: 60/3000 | Train: 0.089853 | Val: 0.133420 | Test: 0.126836 | Best Val: 0.121121 | ETA: 1352m42s
+Epoch: 70/3000 | Train: 0.097813 | Val: 0.130599 | Test: 0.136452 | Best Val: 0.114834 | ETA: 1347m45s
+Epoch: 80/3000 | Train: 0.092881 | Val: 0.106327 | Test: 0.104783 | Best Val: 0.106327 | ETA: 1342m53s
+Epoch: 90/3000 | Train: 0.072803 | Val: 0.115407 | Test: 0.093352 | Best Val: 0.100122 | ETA: 1338m7s
+Epoch: 100/3000 | Train: 0.063992 | Val: 0.095522 | Test: 0.079473 | Best Val: 0.091533 | ETA: 1333m23s
+Epoch: 110/3000 | Train: 0.060799 | Val: 0.088243 | Test: 0.080559 | Best Val: 0.088243 | ETA: 1328m41s
+Epoch: 120/3000 | Train: 0.058305 | Val: 0.093929 | Test: 0.077509 | Best Val: 0.086948 | ETA: 1323m59s
+Epoch: 130/3000 | Train: 0.054799 | Val: 0.087532 | Test: 0.069370 | Best Val: 0.081823 | ETA: 1319m21s
+Epoch: 140/3000 | Train: 0.069329 | Val: 0.133378 | Test: 0.081498 | Best Val: 0.081823 | ETA: 1314m40s
+Epoch: 150/3000 | Train: 0.058610 | Val: 0.085203 | Test: 0.072947 | Best Val: 0.081823 | ETA: 1310m0s
+Epoch: 160/3000 | Train: 0.048359 | Val: 0.072285 | Test: 0.064451 | Best Val: 0.072285 | ETA: 1305m25s
+Epoch: 170/3000 | Train: 0.045852 | Val: 0.074079 | Test: 0.063398 | Best Val: 0.071509 | ETA: 1300m46s
+Epoch: 180/3000 | Train: 0.043747 | Val: 0.071230 | Test: 0.060189 | Best Val: 0.068357 | ETA: 1296m8s
+Epoch: 190/3000 | Train: 0.042456 | Val: 0.069475 | Test: 0.058712 | Best Val: 0.067234 | ETA: 1291m29s
+Epoch: 200/3000 | Train: 0.042795 | Val: 0.068124 | Test: 0.060195 | Best Val: 0.067234 | ETA: 1286m51s
+Epoch: 210/3000 | Train: 0.041906 | Val: 0.067666 | Test: 0.055329 | Best Val: 0.064681 | ETA: 1282m12s
+Epoch: 220/3000 | Train: 0.043719 | Val: 0.076495 | Test: 0.055707 | Best Val: 0.064681 | ETA: 1277m32s
+Epoch: 230/3000 | Train: 0.046261 | Val: 0.068709 | Test: 0.060208 | Best Val: 0.063089 | ETA: 1272m53s
+Epoch: 240/3000 | Train: 0.041905 | Val: 0.069828 | Test: 0.054091 | Best Val: 0.062453 | ETA: 1268m15s
+Epoch: 250/3000 | Train: 0.065854 | Val: 0.134406 | Test: 0.079365 | Best Val: 0.062453 | ETA: 1263m37s
+Epoch: 260/3000 | Train: 0.048572 | Val: 0.066407 | Test: 0.054498 | Best Val: 0.062453 | ETA: 1258m58s
+Epoch: 270/3000 | Train: 0.041717 | Val: 0.065920 | Test: 0.049778 | Best Val: 0.062453 | ETA: 1254m19s
+Epoch: 280/3000 | Train: 0.037985 | Val: 0.064156 | Test: 0.051890 | Best Val: 0.062335 | ETA: 1249m41s
+Epoch: 290/3000 | Train: 0.037044 | Val: 0.060132 | Test: 0.047461 | Best Val: 0.060132 | ETA: 1245m4s
+Epoch: 300/3000 | Train: 0.035379 | Val: 0.060582 | Test: 0.046336 | Best Val: 0.059777 | ETA: 1240m27s
+Epoch: 310/3000 | Train: 0.034602 | Val: 0.059830 | Test: 0.045050 | Best Val: 0.058608 | ETA: 1235m51s
+Epoch: 320/3000 | Train: 0.034128 | Val: 0.058400 | Test: 0.044947 | Best Val: 0.058324 | ETA: 1231m14s
+Epoch: 330/3000 | Train: 0.035686 | Val: 0.061694 | Test: 0.044992 | Best Val: 0.056248 | ETA: 1226m36s
+Epoch: 340/3000 | Train: 0.042123 | Val: 0.066486 | Test: 0.054132 | Best Val: 0.055322 | ETA: 1221m59s
+Epoch: 350/3000 | Train: 0.041011 | Val: 0.061136 | Test: 0.047127 | Best Val: 0.055322 | ETA: 1217m22s
+Epoch: 360/3000 | Train: 0.036462 | Val: 0.065889 | Test: 0.046907 | Best Val: 0.055322 | ETA: 1212m45s
+Epoch: 370/3000 | Train: 0.033648 | Val: 0.058509 | Test: 0.046517 | Best Val: 0.055110 | ETA: 1208m9s
+Epoch: 380/3000 | Train: 0.034306 | Val: 0.061573 | Test: 0.045898 | Best Val: 0.055110 | ETA: 1203m33s
+Epoch: 390/3000 | Train: 0.036328 | Val: 0.058710 | Test: 0.042873 | Best Val: 0.055110 | ETA: 1198m57s
+Epoch: 400/3000 | Train: 0.032908 | Val: 0.054571 | Test: 0.042185 | Best Val: 0.054571 | ETA: 1194m20s
+Epoch: 410/3000 | Train: 0.031213 | Val: 0.056139 | Test: 0.040698 | Best Val: 0.054163 | ETA: 1189m44s
+Epoch: 420/3000 | Train: 0.030769 | Val: 0.055403 | Test: 0.040898 | Best Val: 0.053577 | ETA: 1185m9s
+Epoch: 430/3000 | Train: 0.030278 | Val: 0.055108 | Test: 0.041324 | Best Val: 0.053192 | ETA: 1180m33s
+Epoch: 440/3000 | Train: 0.030962 | Val: 0.056839 | Test: 0.040673 | Best Val: 0.053192 | ETA: 1175m56s
+Epoch: 450/3000 | Train: 0.030771 | Val: 0.055951 | Test: 0.040383 | Best Val: 0.053066 | ETA: 1171m19s
+Epoch: 460/3000 | Train: 0.029222 | Val: 0.052203 | Test: 0.039133 | Best Val: 0.052203 | ETA: 1166m42s
+Epoch: 470/3000 | Train: 0.029385 | Val: 0.053035 | Test: 0.039462 | Best Val: 0.052203 | ETA: 1162m5s
+Epoch: 480/3000 | Train: 0.030041 | Val: 0.053619 | Test: 0.040364 | Best Val: 0.051758 | ETA: 1157m29s
+Epoch: 490/3000 | Train: 0.030828 | Val: 0.054126 | Test: 0.040249 | Best Val: 0.051758 | ETA: 1152m51s
+Epoch: 500/3000 | Train: 0.029106 | Val: 0.053393 | Test: 0.039150 | Best Val: 0.051758 | ETA: 1148m15s
+Epoch: 510/3000 | Train: 0.029676 | Val: 0.052977 | Test: 0.038228 | Best Val: 0.051414 | ETA: 1143m38s
+Epoch: 520/3000 | Train: 0.031924 | Val: 0.056212 | Test: 0.041280 | Best Val: 0.051087 | ETA: 1139m1s
+Epoch: 530/3000 | Train: 0.033929 | Val: 0.056677 | Test: 0.041606 | Best Val: 0.051087 | ETA: 1134m24s
+Epoch: 540/3000 | Train: 0.030940 | Val: 0.060071 | Test: 0.040168 | Best Val: 0.051087 | ETA: 1129m48s
+Epoch: 550/3000 | Train: 0.030498 | Val: 0.052922 | Test: 0.039812 | Best Val: 0.050756 | ETA: 1125m11s
+Epoch: 560/3000 | Train: 0.030367 | Val: 0.051992 | Test: 0.037709 | Best Val: 0.050646 | ETA: 1120m34s
+Epoch: 570/3000 | Train: 0.028869 | Val: 0.053785 | Test: 0.037593 | Best Val: 0.049985 | ETA: 1115m58s
+Epoch: 580/3000 | Train: 0.031790 | Val: 0.051878 | Test: 0.040753 | Best Val: 0.049985 | ETA: 1111m21s
+Epoch: 590/3000 | Train: 0.027916 | Val: 0.049671 | Test: 0.037553 | Best Val: 0.049671 | ETA: 1106m45s
+Epoch: 600/3000 | Train: 0.029199 | Val: 0.050795 | Test: 0.036480 | Best Val: 0.048516 | ETA: 1102m10s
+Epoch: 610/3000 | Train: 0.029772 | Val: 0.055256 | Test: 0.038753 | Best Val: 0.048516 | ETA: 1097m33s
+Epoch: 620/3000 | Train: 0.034907 | Val: 0.061845 | Test: 0.043214 | Best Val: 0.048516 | ETA: 1092m57s
+Epoch: 630/3000 | Train: 0.028297 | Val: 0.048289 | Test: 0.036592 | Best Val: 0.048289 | ETA: 1088m21s
+Epoch: 640/3000 | Train: 0.027663 | Val: 0.049505 | Test: 0.036054 | Best Val: 0.047992 | ETA: 1083m46s
+Epoch: 650/3000 | Train: 0.028110 | Val: 0.048452 | Test: 0.036521 | Best Val: 0.047166 | ETA: 1079m10s
+Epoch: 660/3000 | Train: 0.027950 | Val: 0.050243 | Test: 0.037838 | Best Val: 0.046948 | ETA: 1074m34s
+Epoch: 670/3000 | Train: 0.026149 | Val: 0.046966 | Test: 0.035051 | Best Val: 0.046672 | ETA: 1069m58s
+Epoch: 680/3000 | Train: 0.026309 | Val: 0.048072 | Test: 0.035240 | Best Val: 0.045439 | ETA: 1065m22s
+Epoch: 690/3000 | Train: 0.025756 | Val: 0.047184 | Test: 0.034407 | Best Val: 0.045439 | ETA: 1060m46s
+Epoch: 700/3000 | Train: 0.025775 | Val: 0.048095 | Test: 0.034788 | Best Val: 0.045439 | ETA: 1056m10s
+Epoch: 710/3000 | Train: 0.025412 | Val: 0.046339 | Test: 0.035050 | Best Val: 0.045439 | ETA: 1051m34s
+Epoch: 720/3000 | Train: 0.025330 | Val: 0.046986 | Test: 0.034549 | Best Val: 0.045439 | ETA: 1046m58s
+Epoch: 730/3000 | Train: 0.025797 | Val: 0.047673 | Test: 0.034480 | Best Val: 0.045439 | ETA: 1042m22s
+Epoch: 740/3000 | Train: 0.028905 | Val: 0.049097 | Test: 0.036346 | Best Val: 0.045439 | ETA: 1037m46s
+Epoch: 750/3000 | Train: 0.027415 | Val: 0.049460 | Test: 0.036154 | Best Val: 0.045439 | ETA: 1033m11s
+Epoch: 760/3000 | Train: 0.026981 | Val: 0.046480 | Test: 0.036114 | Best Val: 0.045439 | ETA: 1028m35s
+Epoch: 770/3000 | Train: 0.025693 | Val: 0.048592 | Test: 0.034150 | Best Val: 0.044779 | ETA: 1023m59s
+Epoch: 780/3000 | Train: 0.026632 | Val: 0.046093 | Test: 0.036269 | Best Val: 0.044497 | ETA: 1019m23s
+Epoch: 790/3000 | Train: 0.026213 | Val: 0.046853 | Test: 0.035438 | Best Val: 0.044497 | ETA: 1014m47s
+Epoch: 800/3000 | Train: 0.027432 | Val: 0.044329 | Test: 0.035914 | Best Val: 0.044329 | ETA: 1010m12s
+Epoch: 810/3000 | Train: 0.026256 | Val: 0.050630 | Test: 0.034530 | Best Val: 0.043897 | ETA: 1005m36s
+Epoch: 820/3000 | Train: 0.026010 | Val: 0.049464 | Test: 0.035265 | Best Val: 0.043897 | ETA: 1001m1s
+Epoch: 830/3000 | Train: 0.025942 | Val: 0.046133 | Test: 0.034652 | Best Val: 0.043467 | ETA: 996m25s
+Epoch: 840/3000 | Train: 0.024728 | Val: 0.043453 | Test: 0.033089 | Best Val: 0.042962 | ETA: 991m49s
+Epoch: 850/3000 | Train: 0.024350 | Val: 0.046327 | Test: 0.033491 | Best Val: 0.042962 | ETA: 987m14s
+Epoch: 860/3000 | Train: 0.024447 | Val: 0.045499 | Test: 0.033251 | Best Val: 0.042962 | ETA: 982m38s
+Epoch: 870/3000 | Train: 0.024158 | Val: 0.044357 | Test: 0.033036 | Best Val: 0.042374 | ETA: 978m2s
+Epoch: 880/3000 | Train: 0.024831 | Val: 0.045216 | Test: 0.033088 | Best Val: 0.042374 | ETA: 973m26s
+Epoch: 890/3000 | Train: 0.024729 | Val: 0.044075 | Test: 0.033604 | Best Val: 0.042374 | ETA: 968m51s
+Epoch: 900/3000 | Train: 0.025233 | Val: 0.044300 | Test: 0.033719 | Best Val: 0.042374 | ETA: 964m15s
+Epoch: 910/3000 | Train: 0.025164 | Val: 0.045114 | Test: 0.034677 | Best Val: 0.042374 | ETA: 959m39s
+Epoch: 920/3000 | Train: 0.027470 | Val: 0.045531 | Test: 0.037848 | Best Val: 0.042374 | ETA: 955m3s
+Epoch: 930/3000 | Train: 0.052158 | Val: 0.096637 | Test: 0.057220 | Best Val: 0.042374 | ETA: 950m27s
+Epoch: 940/3000 | Train: 0.106917 | Val: 0.167516 | Test: 0.113502 | Best Val: 0.042374 | ETA: 945m51s
+Epoch: 950/3000 | Train: 0.036860 | Val: 0.060925 | Test: 0.048697 | Best Val: 0.042374 | ETA: 941m16s
+Epoch: 960/3000 | Train: 0.029424 | Val: 0.052948 | Test: 0.040737 | Best Val: 0.042374 | ETA: 936m40s
+Epoch: 970/3000 | Train: 0.027457 | Val: 0.050322 | Test: 0.038803 | Best Val: 0.042374 | ETA: 932m4s
+Epoch: 980/3000 | Train: 0.026588 | Val: 0.048386 | Test: 0.037402 | Best Val: 0.042374 | ETA: 927m29s
+Epoch: 990/3000 | Train: 0.025690 | Val: 0.047076 | Test: 0.036588 | Best Val: 0.042374 | ETA: 922m53s
+Epoch: 1000/3000 | Train: 0.025196 | Val: 0.046906 | Test: 0.035857 | Best Val: 0.042374 | ETA: 918m17s
+Epoch: 1010/3000 | Train: 0.024806 | Val: 0.046209 | Test: 0.035620 | Best Val: 0.042374 | ETA: 913m42s
+Epoch: 1020/3000 | Train: 0.024400 | Val: 0.044940 | Test: 0.035006 | Best Val: 0.042374 | ETA: 909m6s
+Epoch: 1030/3000 | Train: 0.024236 | Val: 0.045011 | Test: 0.034525 | Best Val: 0.042374 | ETA: 904m31s
+Epoch: 1040/3000 | Train: 0.023882 | Val: 0.044470 | Test: 0.034231 | Best Val: 0.042374 | ETA: 899m55s
+Epoch: 1050/3000 | Train: 0.023668 | Val: 0.045141 | Test: 0.034188 | Best Val: 0.042374 | ETA: 895m20s
+Epoch: 1060/3000 | Train: 0.023457 | Val: 0.044701 | Test: 0.034050 | Best Val: 0.042374 | ETA: 890m44s
+Epoch: 1070/3000 | Train: 0.023231 | Val: 0.044017 | Test: 0.033713 | Best Val: 0.042374 | ETA: 886m8s
+Epoch: 1080/3000 | Train: 0.023103 | Val: 0.044098 | Test: 0.033847 | Best Val: 0.042374 | ETA: 881m33s
+Epoch: 1090/3000 | Train: 0.022911 | Val: 0.043436 | Test: 0.033543 | Best Val: 0.042374 | ETA: 876m57s
+Epoch: 1100/3000 | Train: 0.022871 | Val: 0.044747 | Test: 0.033715 | Best Val: 0.042374 | ETA: 872m22s
+Epoch: 1110/3000 | Train: 0.022754 | Val: 0.044129 | Test: 0.033742 | Best Val: 0.042374 | ETA: 867m46s
+Epoch: 1120/3000 | Train: 0.022487 | Val: 0.043642 | Test: 0.033273 | Best Val: 0.042374 | ETA: 863m11s
+Epoch: 1130/3000 | Train: 0.022559 | Val: 0.043112 | Test: 0.033148 | Best Val: 0.042374 | ETA: 858m35s
+Epoch: 1140/3000 | Train: 0.022643 | Val: 0.043385 | Test: 0.033331 | Best Val: 0.042374 | ETA: 853m59s
+Epoch: 1150/3000 | Train: 0.024633 | Val: 0.042191 | Test: 0.035126 | Best Val: 0.042191 | ETA: 849m24s
+Epoch: 1160/3000 | Train: 0.027409 | Val: 0.043972 | Test: 0.035596 | Best Val: 0.042191 | ETA: 844m48s
+Epoch: 1170/3000 | Train: 0.024508 | Val: 0.042765 | Test: 0.034531 | Best Val: 0.041689 | ETA: 840m12s
+Epoch: 1180/3000 | Train: 0.022483 | Val: 0.042305 | Test: 0.032668 | Best Val: 0.041689 | ETA: 835m37s
+Epoch: 1190/3000 | Train: 0.022374 | Val: 0.042753 | Test: 0.033119 | Best Val: 0.041689 | ETA: 831m1s
+Epoch: 1200/3000 | Train: 0.022174 | Val: 0.042438 | Test: 0.032639 | Best Val: 0.041223 | ETA: 826m26s
+Epoch: 1210/3000 | Train: 0.022125 | Val: 0.042772 | Test: 0.032801 | Best Val: 0.040768 | ETA: 821m50s
+Epoch: 1220/3000 | Train: 0.021815 | Val: 0.042217 | Test: 0.032596 | Best Val: 0.040768 | ETA: 817m14s
+Epoch: 1230/3000 | Train: 0.021738 | Val: 0.041760 | Test: 0.032550 | Best Val: 0.040768 | ETA: 812m38s
+Epoch: 1240/3000 | Train: 0.021602 | Val: 0.041121 | Test: 0.032440 | Best Val: 0.040768 | ETA: 808m3s
+Epoch: 1250/3000 | Train: 0.021510 | Val: 0.041251 | Test: 0.032258 | Best Val: 0.040768 | ETA: 803m27s
+Epoch: 1260/3000 | Train: 0.021667 | Val: 0.040855 | Test: 0.032712 | Best Val: 0.040768 | ETA: 798m51s
+Epoch: 1270/3000 | Train: 0.021743 | Val: 0.041358 | Test: 0.032690 | Best Val: 0.040670 | ETA: 794m15s
+Epoch: 1280/3000 | Train: 0.021601 | Val: 0.043344 | Test: 0.032943 | Best Val: 0.040670 | ETA: 789m40s
+Epoch: 1290/3000 | Train: 0.021955 | Val: 0.041741 | Test: 0.033658 | Best Val: 0.040670 | ETA: 785m4s
+Epoch: 1300/3000 | Train: 0.022778 | Val: 0.040270 | Test: 0.035073 | Best Val: 0.040270 | ETA: 780m29s
+Epoch: 1310/3000 | Train: 0.022578 | Val: 0.042580 | Test: 0.033618 | Best Val: 0.040270 | ETA: 775m53s
+Epoch: 1320/3000 | Train: 0.021605 | Val: 0.041156 | Test: 0.032322 | Best Val: 0.040270 | ETA: 771m17s
+Epoch: 1330/3000 | Train: 0.021817 | Val: 0.041430 | Test: 0.032674 | Best Val: 0.040270 | ETA: 766m42s
+Epoch: 1340/3000 | Train: 0.021642 | Val: 0.042398 | Test: 0.033011 | Best Val: 0.040270 | ETA: 762m6s
+Epoch: 1350/3000 | Train: 0.021161 | Val: 0.040902 | Test: 0.031985 | Best Val: 0.040202 | ETA: 757m30s
+Epoch: 1360/3000 | Train: 0.021218 | Val: 0.040756 | Test: 0.031952 | Best Val: 0.040202 | ETA: 752m54s
+Epoch: 1370/3000 | Train: 0.021451 | Val: 0.041631 | Test: 0.032652 | Best Val: 0.040202 | ETA: 748m18s
+Epoch: 1380/3000 | Train: 0.020867 | Val: 0.040341 | Test: 0.032483 | Best Val: 0.040202 | ETA: 743m43s
+Epoch: 1390/3000 | Train: 0.021512 | Val: 0.041193 | Test: 0.033250 | Best Val: 0.040202 | ETA: 739m7s
+Epoch: 1400/3000 | Train: 0.021513 | Val: 0.043952 | Test: 0.034583 | Best Val: 0.040202 | ETA: 734m31s
+Epoch: 1410/3000 | Train: 0.021412 | Val: 0.042250 | Test: 0.033375 | Best Val: 0.040202 | ETA: 729m55s
+Epoch: 1420/3000 | Train: 0.021467 | Val: 0.039798 | Test: 0.032133 | Best Val: 0.039798 | ETA: 725m19s
+Epoch: 1430/3000 | Train: 0.021055 | Val: 0.042378 | Test: 0.032658 | Best Val: 0.039798 | ETA: 720m44s
+Epoch: 1440/3000 | Train: 0.020727 | Val: 0.040969 | Test: 0.032055 | Best Val: 0.039798 | ETA: 716m8s
+Epoch: 1450/3000 | Train: 0.021203 | Val: 0.040594 | Test: 0.032584 | Best Val: 0.039798 | ETA: 711m32s
+Epoch: 1460/3000 | Train: 0.021464 | Val: 0.041254 | Test: 0.032730 | Best Val: 0.039798 | ETA: 706m57s
+Epoch: 1470/3000 | Train: 0.020806 | Val: 0.041110 | Test: 0.032595 | Best Val: 0.039798 | ETA: 702m21s
+Epoch: 1480/3000 | Train: 0.020163 | Val: 0.040266 | Test: 0.031675 | Best Val: 0.039798 | ETA: 697m45s
+Epoch: 1490/3000 | Train: 0.020123 | Val: 0.040333 | Test: 0.031786 | Best Val: 0.039798 | ETA: 693m10s
+Epoch: 1500/3000 | Train: 0.020206 | Val: 0.040099 | Test: 0.031626 | Best Val: 0.039734 | ETA: 688m34s
+Epoch: 1510/3000 | Train: 0.019913 | Val: 0.040135 | Test: 0.031775 | Best Val: 0.039734 | ETA: 683m59s
+Epoch: 1520/3000 | Train: 0.020087 | Val: 0.042231 | Test: 0.032234 | Best Val: 0.039734 | ETA: 679m23s
+Epoch: 1530/3000 | Train: 0.020369 | Val: 0.043359 | Test: 0.032730 | Best Val: 0.039734 | ETA: 674m47s
+Epoch: 1540/3000 | Train: 0.022009 | Val: 0.045034 | Test: 0.033753 | Best Val: 0.039734 | ETA: 670m11s
+Epoch: 1550/3000 | Train: 0.020826 | Val: 0.042031 | Test: 0.032924 | Best Val: 0.039734 | ETA: 665m36s
+Epoch: 1560/3000 | Train: 0.020500 | Val: 0.041149 | Test: 0.032575 | Best Val: 0.039734 | ETA: 661m0s
+Epoch: 1570/3000 | Train: 0.019681 | Val: 0.040579 | Test: 0.032038 | Best Val: 0.039734 | ETA: 656m24s
+Epoch: 1580/3000 | Train: 0.019462 | Val: 0.040084 | Test: 0.031619 | Best Val: 0.039734 | ETA: 651m49s
+Epoch: 1590/3000 | Train: 0.019440 | Val: 0.040408 | Test: 0.031628 | Best Val: 0.039734 | ETA: 647m13s
+Epoch: 1600/3000 | Train: 0.019478 | Val: 0.041389 | Test: 0.031931 | Best Val: 0.039734 | ETA: 642m37s
+Epoch: 1610/3000 | Train: 0.020114 | Val: 0.041644 | Test: 0.031904 | Best Val: 0.039734 | ETA: 638m2s
+Epoch: 1620/3000 | Train: 0.020823 | Val: 0.041692 | Test: 0.033774 | Best Val: 0.039734 | ETA: 633m26s
+Epoch: 1630/3000 | Train: 0.020184 | Val: 0.043672 | Test: 0.032205 | Best Val: 0.039734 | ETA: 628m50s
+Epoch: 1640/3000 | Train: 0.019797 | Val: 0.041700 | Test: 0.032466 | Best Val: 0.039734 | ETA: 624m15s
+Epoch: 1650/3000 | Train: 0.019453 | Val: 0.041473 | Test: 0.032198 | Best Val: 0.039734 | ETA: 619m39s
+Epoch: 1660/3000 | Train: 0.019638 | Val: 0.041595 | Test: 0.032470 | Best Val: 0.039734 | ETA: 615m3s
+Epoch: 1670/3000 | Train: 0.019944 | Val: 0.041984 | Test: 0.032521 | Best Val: 0.039734 | ETA: 610m28s
+Epoch: 1680/3000 | Train: 0.019866 | Val: 0.040818 | Test: 0.032742 | Best Val: 0.039734 | ETA: 605m52s
+Epoch: 1690/3000 | Train: 0.019501 | Val: 0.041571 | Test: 0.032196 | Best Val: 0.039734 | ETA: 601m17s
+Epoch: 1700/3000 | Train: 0.019089 | Val: 0.040696 | Test: 0.031971 | Best Val: 0.039734 | ETA: 596m41s
+Epoch: 1710/3000 | Train: 0.019627 | Val: 0.041593 | Test: 0.032819 | Best Val: 0.039734 | ETA: 592m5s
+Epoch: 1720/3000 | Train: 0.019037 | Val: 0.041104 | Test: 0.032009 | Best Val: 0.039734 | ETA: 587m30s
+Epoch: 1730/3000 | Train: 0.018739 | Val: 0.040659 | Test: 0.031751 | Best Val: 0.039734 | ETA: 582m54s
+Epoch: 1740/3000 | Train: 0.018666 | Val: 0.040708 | Test: 0.031917 | Best Val: 0.039734 | ETA: 578m18s
+Epoch: 1750/3000 | Train: 0.018641 | Val: 0.040956 | Test: 0.032021 | Best Val: 0.039734 | ETA: 573m43s
+Epoch: 1760/3000 | Train: 0.019230 | Val: 0.041981 | Test: 0.032935 | Best Val: 0.039734 | ETA: 569m7s
+Epoch: 1770/3000 | Train: 0.019673 | Val: 0.040710 | Test: 0.032729 | Best Val: 0.039734 | ETA: 564m31s
+Epoch: 1780/3000 | Train: 0.022389 | Val: 0.048245 | Test: 0.035966 | Best Val: 0.039734 | ETA: 559m56s
+Epoch: 1790/3000 | Train: 0.023209 | Val: 0.046298 | Test: 0.034928 | Best Val: 0.039734 | ETA: 555m20s
+Epoch: 1800/3000 | Train: 0.019063 | Val: 0.041072 | Test: 0.032300 | Best Val: 0.039734 | ETA: 550m44s
+Epoch: 1810/3000 | Train: 0.018732 | Val: 0.041037 | Test: 0.032108 | Best Val: 0.039734 | ETA: 546m9s
+Epoch: 1820/3000 | Train: 0.018600 | Val: 0.040784 | Test: 0.032011 | Best Val: 0.039734 | ETA: 541m33s
+Epoch: 1830/3000 | Train: 0.018602 | Val: 0.041757 | Test: 0.032000 | Best Val: 0.039734 | ETA: 536m58s
+Epoch: 1840/3000 | Train: 0.018483 | Val: 0.041145 | Test: 0.032087 | Best Val: 0.039734 | ETA: 532m22s
+Epoch: 1850/3000 | Train: 0.018515 | Val: 0.040938 | Test: 0.032310 | Best Val: 0.039734 | ETA: 527m46s
+Epoch: 1860/3000 | Train: 0.018412 | Val: 0.041182 | Test: 0.032236 | Best Val: 0.039734 | ETA: 523m11s
+Epoch: 1870/3000 | Train: 0.018513 | Val: 0.041448 | Test: 0.032417 | Best Val: 0.039734 | ETA: 518m35s
+Epoch: 1880/3000 | Train: 0.018808 | Val: 0.041103 | Test: 0.033211 | Best Val: 0.039734 | ETA: 514m0s
+Epoch: 1890/3000 | Train: 0.019416 | Val: 0.042176 | Test: 0.033078 | Best Val: 0.039734 | ETA: 509m24s
+Epoch: 1900/3000 | Train: 0.020967 | Val: 0.043719 | Test: 0.034495 | Best Val: 0.039734 | ETA: 504m49s
+Epoch: 1910/3000 | Train: 0.018694 | Val: 0.042867 | Test: 0.033366 | Best Val: 0.039734 | ETA: 500m13s
+Epoch: 1920/3000 | Train: 0.018527 | Val: 0.041820 | Test: 0.032718 | Best Val: 0.039734 | ETA: 495m37s
+Epoch: 1930/3000 | Train: 0.018290 | Val: 0.041290 | Test: 0.032165 | Best Val: 0.039734 | ETA: 491m2s
+Epoch: 1940/3000 | Train: 0.018059 | Val: 0.041449 | Test: 0.032332 | Best Val: 0.039734 | ETA: 486m26s
+Epoch: 1950/3000 | Train: 0.018167 | Val: 0.041584 | Test: 0.032328 | Best Val: 0.039734 | ETA: 481m51s
+Epoch: 1960/3000 | Train: 0.018222 | Val: 0.042108 | Test: 0.032693 | Best Val: 0.039734 | ETA: 477m15s
+Epoch: 1970/3000 | Train: 0.018088 | Val: 0.041687 | Test: 0.032499 | Best Val: 0.039734 | ETA: 472m39s
+Epoch: 1980/3000 | Train: 0.018024 | Val: 0.041505 | Test: 0.032654 | Best Val: 0.039734 | ETA: 468m4s
+Epoch: 1990/3000 | Train: 0.018365 | Val: 0.041791 | Test: 0.032531 | Best Val: 0.039734 | ETA: 463m28s
+Epoch: 2000/3000 | Train: 0.021167 | Val: 0.044263 | Test: 0.035547 | Best Val: 0.039734 | ETA: 458m52s
+Epoch: 2010/3000 | Train: 0.141368 | Val: 0.190810 | Test: 0.156460 | Best Val: 0.039734 | ETA: 454m17s
+Epoch: 2020/3000 | Train: 0.050606 | Val: 0.089974 | Test: 0.071068 | Best Val: 0.039734 | ETA: 449m41s
+Epoch: 2030/3000 | Train: 0.039916 | Val: 0.076975 | Test: 0.060067 | Best Val: 0.039734 | ETA: 445m6s
+Epoch: 2040/3000 | Train: 0.035603 | Val: 0.071181 | Test: 0.054888 | Best Val: 0.039734 | ETA: 440m30s
+Epoch: 2050/3000 | Train: 0.032988 | Val: 0.067589 | Test: 0.051736 | Best Val: 0.039734 | ETA: 435m55s
+Epoch: 2060/3000 | Train: 0.031087 | Val: 0.064969 | Test: 0.049496 | Best Val: 0.039734 | ETA: 431m19s
+Epoch: 2070/3000 | Train: 0.029685 | Val: 0.062892 | Test: 0.047581 | Best Val: 0.039734 | ETA: 426m44s
+Epoch: 2080/3000 | Train: 0.028633 | Val: 0.061652 | Test: 0.046569 | Best Val: 0.039734 | ETA: 422m8s
+Epoch: 2090/3000 | Train: 0.027624 | Val: 0.060562 | Test: 0.045181 | Best Val: 0.039734 | ETA: 417m33s
+Epoch: 2100/3000 | Train: 0.026922 | Val: 0.059663 | Test: 0.044618 | Best Val: 0.039734 | ETA: 412m57s
+Epoch: 2110/3000 | Train: 0.026217 | Val: 0.058496 | Test: 0.043629 | Best Val: 0.039734 | ETA: 408m21s
+Epoch: 2120/3000 | Train: 0.025745 | Val: 0.058089 | Test: 0.043155 | Best Val: 0.039734 | ETA: 403m46s
+Epoch: 2130/3000 | Train: 0.025216 | Val: 0.056912 | Test: 0.042521 | Best Val: 0.039734 | ETA: 399m10s
+Epoch: 2140/3000 | Train: 0.024747 | Val: 0.056291 | Test: 0.042192 | Best Val: 0.039734 | ETA: 394m35s
+Epoch: 2150/3000 | Train: 0.024368 | Val: 0.056251 | Test: 0.041689 | Best Val: 0.039734 | ETA: 389m59s
+Epoch: 2160/3000 | Train: 0.024168 | Val: 0.057022 | Test: 0.042106 | Best Val: 0.039734 | ETA: 385m24s
+Epoch: 2170/3000 | Train: 0.024011 | Val: 0.055150 | Test: 0.041809 | Best Val: 0.039734 | ETA: 380m48s
+Epoch: 2180/3000 | Train: 0.023752 | Val: 0.055319 | Test: 0.040780 | Best Val: 0.039734 | ETA: 376m12s
+Epoch: 2190/3000 | Train: 0.023382 | Val: 0.053995 | Test: 0.039884 | Best Val: 0.039734 | ETA: 371m37s
+Epoch: 2200/3000 | Train: 0.022964 | Val: 0.053931 | Test: 0.039218 | Best Val: 0.039734 | ETA: 367m1s
+Epoch: 2210/3000 | Train: 0.022883 | Val: 0.053867 | Test: 0.038871 | Best Val: 0.039734 | ETA: 362m26s
+Epoch: 2220/3000 | Train: 0.022639 | Val: 0.054014 | Test: 0.038719 | Best Val: 0.039734 | ETA: 357m50s
+Epoch: 2230/3000 | Train: 0.022346 | Val: 0.053351 | Test: 0.039034 | Best Val: 0.039734 | ETA: 353m15s
+Epoch: 2240/3000 | Train: 0.022498 | Val: 0.052840 | Test: 0.038526 | Best Val: 0.039734 | ETA: 348m39s
+Epoch: 2250/3000 | Train: 0.024904 | Val: 0.054710 | Test: 0.041473 | Best Val: 0.039734 | ETA: 344m3s
+Epoch: 2260/3000 | Train: 0.022506 | Val: 0.051081 | Test: 0.037463 | Best Val: 0.039734 | ETA: 339m28s
+Epoch: 2270/3000 | Train: 0.022130 | Val: 0.052578 | Test: 0.037083 | Best Val: 0.039734 | ETA: 334m52s
+Epoch: 2280/3000 | Train: 0.022148 | Val: 0.051198 | Test: 0.037104 | Best Val: 0.039734 | ETA: 330m17s
+Epoch: 2290/3000 | Train: 0.021436 | Val: 0.050894 | Test: 0.036145 | Best Val: 0.039734 | ETA: 325m41s
+Epoch: 2300/3000 | Train: 0.021246 | Val: 0.049974 | Test: 0.036170 | Best Val: 0.039734 | ETA: 321m5s
+Epoch: 2310/3000 | Train: 0.021210 | Val: 0.050693 | Test: 0.035850 | Best Val: 0.039734 | ETA: 316m30s
+Epoch: 2320/3000 | Train: 0.020922 | Val: 0.050110 | Test: 0.036000 | Best Val: 0.039734 | ETA: 311m54s
+Epoch: 2330/3000 | Train: 0.020789 | Val: 0.050119 | Test: 0.035957 | Best Val: 0.039734 | ETA: 307m19s
+Epoch: 2340/3000 | Train: 0.020843 | Val: 0.049226 | Test: 0.035536 | Best Val: 0.039734 | ETA: 302m43s
+Epoch: 2350/3000 | Train: 0.020785 | Val: 0.049535 | Test: 0.035740 | Best Val: 0.039734 | ETA: 298m7s
+Epoch: 2360/3000 | Train: 0.020626 | Val: 0.048920 | Test: 0.035680 | Best Val: 0.039734 | ETA: 293m32s
+Epoch: 2370/3000 | Train: 0.020603 | Val: 0.050218 | Test: 0.035928 | Best Val: 0.039734 | ETA: 288m56s
+Epoch: 2380/3000 | Train: 0.020511 | Val: 0.048699 | Test: 0.035366 | Best Val: 0.039734 | ETA: 284m21s
+Epoch: 2390/3000 | Train: 0.020342 | Val: 0.050060 | Test: 0.035045 | Best Val: 0.039734 | ETA: 279m45s
+Epoch: 2400/3000 | Train: 0.020861 | Val: 0.049284 | Test: 0.035338 | Best Val: 0.039734 | ETA: 275m9s
+Epoch: 2410/3000 | Train: 0.020509 | Val: 0.048707 | Test: 0.034834 | Best Val: 0.039734 | ETA: 270m34s
+Epoch: 2420/3000 | Train: 0.020440 | Val: 0.047993 | Test: 0.035359 | Best Val: 0.039734 | ETA: 265m58s
+Epoch: 2430/3000 | Train: 0.020840 | Val: 0.047977 | Test: 0.035161 | Best Val: 0.039734 | ETA: 261m23s
+Epoch: 2440/3000 | Train: 0.020191 | Val: 0.048933 | Test: 0.034785 | Best Val: 0.039734 | ETA: 256m47s
+Epoch: 2450/3000 | Train: 0.019836 | Val: 0.047551 | Test: 0.034777 | Best Val: 0.039734 | ETA: 252m11s
+Epoch: 2460/3000 | Train: 0.020107 | Val: 0.048922 | Test: 0.035031 | Best Val: 0.039734 | ETA: 247m36s
+Epoch: 2470/3000 | Train: 0.020138 | Val: 0.049796 | Test: 0.035349 | Best Val: 0.039734 | ETA: 243m0s
+Epoch: 2480/3000 | Train: 0.020720 | Val: 0.048876 | Test: 0.035647 | Best Val: 0.039734 | ETA: 238m24s
+Epoch: 2490/3000 | Train: 0.021315 | Val: 0.052260 | Test: 0.036654 | Best Val: 0.039734 | ETA: 233m49s
+Epoch: 2500/3000 | Train: 0.020068 | Val: 0.047517 | Test: 0.034784 | Best Val: 0.039734 | ETA: 229m13s
+Epoch: 2510/3000 | Train: 0.019432 | Val: 0.047076 | Test: 0.034283 | Best Val: 0.039734 | ETA: 224m38s
+Epoch: 2520/3000 | Train: 0.019268 | Val: 0.046727 | Test: 0.033950 | Best Val: 0.039734 | ETA: 220m2s
+Epoch: 2530/3000 | Train: 0.019139 | Val: 0.046762 | Test: 0.033709 | Best Val: 0.039734 | ETA: 215m26s
+Epoch: 2540/3000 | Train: 0.018989 | Val: 0.046762 | Test: 0.033762 | Best Val: 0.039734 | ETA: 210m51s
+Epoch: 2550/3000 | Train: 0.018968 | Val: 0.046638 | Test: 0.033718 | Best Val: 0.039734 | ETA: 206m15s
+Epoch: 2560/3000 | Train: 0.019227 | Val: 0.046927 | Test: 0.033909 | Best Val: 0.039734 | ETA: 201m40s
+Epoch: 2570/3000 | Train: 0.019053 | Val: 0.047230 | Test: 0.033983 | Best Val: 0.039734 | ETA: 197m4s
+Epoch: 2580/3000 | Train: 0.019019 | Val: 0.047296 | Test: 0.034062 | Best Val: 0.039734 | ETA: 192m28s
+Epoch: 2590/3000 | Train: 0.019337 | Val: 0.047337 | Test: 0.034056 | Best Val: 0.039734 | ETA: 187m53s
+Epoch: 2600/3000 | Train: 0.019266 | Val: 0.046355 | Test: 0.034336 | Best Val: 0.039734 | ETA: 183m17s
+Epoch: 2610/3000 | Train: 0.019407 | Val: 0.047578 | Test: 0.034196 | Best Val: 0.039734 | ETA: 178m41s
+Epoch: 2620/3000 | Train: 0.019722 | Val: 0.048186 | Test: 0.034332 | Best Val: 0.039734 | ETA: 174m6s
+Epoch: 2630/3000 | Train: 0.019240 | Val: 0.047180 | Test: 0.034264 | Best Val: 0.039734 | ETA: 169m30s
+Epoch: 2640/3000 | Train: 0.018865 | Val: 0.046397 | Test: 0.033757 | Best Val: 0.039734 | ETA: 164m55s
+Epoch: 2650/3000 | Train: 0.018856 | Val: 0.046047 | Test: 0.033580 | Best Val: 0.039734 | ETA: 160m19s
+Epoch: 2660/3000 | Train: 0.018838 | Val: 0.046943 | Test: 0.034077 | Best Val: 0.039734 | ETA: 155m43s
+Epoch: 2670/3000 | Train: 0.019202 | Val: 0.046949 | Test: 0.034039 | Best Val: 0.039734 | ETA: 151m8s
+Epoch: 2680/3000 | Train: 0.018767 | Val: 0.046762 | Test: 0.034090 | Best Val: 0.039734 | ETA: 146m32s
+Epoch: 2690/3000 | Train: 0.018585 | Val: 0.046485 | Test: 0.033642 | Best Val: 0.039734 | ETA: 141m56s
+Epoch: 2700/3000 | Train: 0.019108 | Val: 0.047012 | Test: 0.034492 | Best Val: 0.039734 | ETA: 137m21s
+Epoch: 2710/3000 | Train: 0.019314 | Val: 0.047423 | Test: 0.034322 | Best Val: 0.039734 | ETA: 132m45s
+Epoch: 2720/3000 | Train: 0.018655 | Val: 0.046313 | Test: 0.034420 | Best Val: 0.039734 | ETA: 128m10s
+Epoch: 2730/3000 | Train: 0.018485 | Val: 0.046006 | Test: 0.033927 | Best Val: 0.039734 | ETA: 123m34s
+Epoch: 2740/3000 | Train: 0.018414 | Val: 0.045768 | Test: 0.033473 | Best Val: 0.039734 | ETA: 118m58s
+Epoch: 2750/3000 | Train: 0.018391 | Val: 0.047024 | Test: 0.033854 | Best Val: 0.039734 | ETA: 114m23s
+Epoch: 2760/3000 | Train: 0.018189 | Val: 0.045952 | Test: 0.033423 | Best Val: 0.039734 | ETA: 109m47s
+Epoch: 2770/3000 | Train: 0.018048 | Val: 0.045787 | Test: 0.033695 | Best Val: 0.039734 | ETA: 105m11s
+Epoch: 2780/3000 | Train: 0.018104 | Val: 0.045765 | Test: 0.033486 | Best Val: 0.039734 | ETA: 100m36s
+Epoch: 2790/3000 | Train: 0.018460 | Val: 0.046707 | Test: 0.034020 | Best Val: 0.039734 | ETA: 96m0s
+Epoch: 2800/3000 | Train: 0.019083 | Val: 0.046121 | Test: 0.034569 | Best Val: 0.039734 | ETA: 91m25s
+Epoch: 2810/3000 | Train: 0.018759 | Val: 0.046650 | Test: 0.034563 | Best Val: 0.039734 | ETA: 86m49s
+Epoch: 2820/3000 | Train: 0.018142 | Val: 0.045646 | Test: 0.033852 | Best Val: 0.039734 | ETA: 82m13s
+Epoch: 2830/3000 | Train: 0.018043 | Val: 0.044304 | Test: 0.033623 | Best Val: 0.039734 | ETA: 77m38s
+Epoch: 2840/3000 | Train: 0.017797 | Val: 0.045708 | Test: 0.033142 | Best Val: 0.039734 | ETA: 73m2s
+Epoch: 2850/3000 | Train: 0.017695 | Val: 0.045453 | Test: 0.033410 | Best Val: 0.039734 | ETA: 68m26s
+Epoch: 2860/3000 | Train: 0.017762 | Val: 0.045450 | Test: 0.033293 | Best Val: 0.039734 | ETA: 63m51s
+Epoch: 2870/3000 | Train: 0.017894 | Val: 0.045261 | Test: 0.033537 | Best Val: 0.039734 | ETA: 59m15s
+Epoch: 2880/3000 | Train: 0.018911 | Val: 0.047773 | Test: 0.035702 | Best Val: 0.039734 | ETA: 54m39s
+Epoch: 2890/3000 | Train: 0.018166 | Val: 0.046804 | Test: 0.033432 | Best Val: 0.039734 | ETA: 50m4s
+Epoch: 2900/3000 | Train: 0.018601 | Val: 0.045915 | Test: 0.034751 | Best Val: 0.039734 | ETA: 45m28s
+Epoch: 2910/3000 | Train: 0.018393 | Val: 0.045769 | Test: 0.033794 | Best Val: 0.039734 | ETA: 40m53s
+Epoch: 2920/3000 | Train: 0.017925 | Val: 0.045043 | Test: 0.033628 | Best Val: 0.039734 | ETA: 36m17s
+Epoch: 2930/3000 | Train: 0.018171 | Val: 0.045321 | Test: 0.033638 | Best Val: 0.039734 | ETA: 31m41s
+Epoch: 2940/3000 | Train: 0.017692 | Val: 0.045150 | Test: 0.033687 | Best Val: 0.039734 | ETA: 27m6s
+Epoch: 2950/3000 | Train: 0.017507 | Val: 0.045227 | Test: 0.032954 | Best Val: 0.039734 | ETA: 22m30s
+Epoch: 2960/3000 | Train: 0.017320 | Val: 0.044774 | Test: 0.033241 | Best Val: 0.039734 | ETA: 17m54s
+Epoch: 2970/3000 | Train: 0.017379 | Val: 0.044945 | Test: 0.033086 | Best Val: 0.039734 | ETA: 13m19s
+Epoch: 2980/3000 | Train: 0.017216 | Val: 0.044352 | Test: 0.033070 | Best Val: 0.039734 | ETA: 8m43s
+Epoch: 2990/3000 | Train: 0.017296 | Val: 0.044689 | Test: 0.033205 | Best Val: 0.039734 | ETA: 4m8s
+Total training time: 1378 min
+Saved loss curve to Predictions/geo_donet_siren_3000ep_w300_w0_30_f301/loss_curve.png
+=== DONE Sat May 30 12:36:22 AM +08 2026 ===

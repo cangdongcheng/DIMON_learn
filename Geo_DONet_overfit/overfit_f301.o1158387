@@ -1,0 +1,24 @@
+Unloading shared
+  WARNING: Did not unuse /cm/shared/modulefiles
+Loading Python/3.11.3-GCCcore-12.3.0
+  Loading requirement: GCCcore/12.3.0 zlib/1.2.13-GCCcore-12.3.0
+    binutils/2.40-GCCcore-12.3.0 bzip2/1.0.8-GCCcore-12.3.0
+    ncurses/6.4-GCCcore-12.3.0 libreadline/8.2-GCCcore-12.3.0
+    Tcl/8.6.13-GCCcore-12.3.0 SQLite/3.42.0-GCCcore-12.3.0
+    XZ/5.4.2-GCCcore-12.3.0 libffi/3.4.4-GCCcore-12.3.0 OpenSSL/1.1
+[dimon env] python   =Python 3.11.3  (/home/svu/e1032484/venvs/dimon/bin/python)
+[dimon env] torch    =2.1.2+cu121 cuda 12.1
+[dimon env] sklearn  =1.3.2
+[dimon env] cuda gpu =True  (False on login nodes is expected)
+outputs -> Predictions/case0_f301_w300_d4/
+overfitting IMMC001_20150716_merge_000 (frame-step 2) | 50797 nodes, 301 frames, dt=2 ms
+model: GeoDONet w300 d4 | 561,900 params | cuda
+epoch      0/5000 | train MSE 2.658e+00 | best 2.658e+00 | eta 294m4s
+epoch     50/5000 | train MSE 6.892e-01 | best 6.888e-01 | eta 265m19s
+epoch    100/5000 | train MSE 2.368e-01 | best 2.368e-01 | eta 263m9s
+epoch    150/5000 | train MSE 1.917e-01 | best 1.917e-01 | eta 260m17s
+epoch    200/5000 | train MSE 1.931e-01 | best 1.912e-01 | eta 257m9s
+epoch    250/5000 | train MSE 1.822e-01 | best 1.822e-01 | eta 254m39s
+epoch    300/5000 | train MSE 2.020e-01 | best 1.816e-01 | eta 251m48s
+epoch    350/5000 | train MSE 1.844e-01 | best 1.816e-01 | eta 248m56s
+epoch    400/5000 | train MSE 1.789e-01 | best 1.789e-01 | eta 246m20s

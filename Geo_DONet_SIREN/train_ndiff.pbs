@@ -1,0 +1,28 @@
+#!/bin/bash
+#PBS -N siren_ndiff
+#PBS -l select=1:ngpus=1
+#PBS -l walltime=24:00:00
+#PBS -j oe
+#
+# SIREN trunk + signed-Laplacian neighbour-diff loss on f121, scheduled LR 5e-4->5e-5
+# (--lr 5e-4 --lr-scheduled, reproducing the original SIREN+ndiff recipe). Matches
+# Geo_DONet_ndiff exactly except for the Tanh-vs-SIREN trunk — the test is whether
+# the high-frequency SIREN trunk drives the nDiff term down where Tanh left it flat.
+# Submit:   qsub train_ndiff.pbs   (lambda override:  qsub -v LAM=3 train_ndiff.pbs)
+#
+# Trunk is grad-checkpointed by default; the ndiff op adds ~1.8 GB at f121/B24.
+# If it OOMs on the A40, drop --batch-size to 16.
+
+source ~/load_dimon_env.sh
+cd /home/svu/e1032484/DIMON_learn/Geo_DONet_SIREN
+
+echo "=== START $(date) ==="
+echo "node: $(hostname)"
+nvidia-smi
+
+#   -> CheckPts/geodonet_siren_w300_d4_w0_30_5000ep_lrsched_ndiff${LAM}_f121.pt
+python -u main.py --epochs 5000 --width 300 --batch-size 24 --lr 5e-4 --lr-scheduled \
+    --data-path geo_donet_data_f601.npz --frame-step 5 --omega-0 30 \
+    --ndiff-weight ${LAM:-1.0} --device cuda
+
+echo "=== DONE $(date) ==="

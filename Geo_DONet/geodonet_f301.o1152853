@@ -324,3 +324,18 @@ epoch  2840/3000 | train 0.035912 | val 0.048877 | best 0.044872 | eta 59m17s
 epoch  2850/3000 | train 0.035613 | val 0.048644 | best 0.044872 | eta 55m33s
 epoch  2860/3000 | train 0.035445 | val 0.049302 | best 0.044872 | eta 51m50s
 epoch  2870/3000 | train 0.035167 | val 0.050185 | best 0.044872 | eta 48m6s
+epoch  2880/3000 | train 0.035119 | val 0.050170 | best 0.044872 | eta 44m22s
+epoch  2890/3000 | train 0.035054 | val 0.051159 | best 0.044872 | eta 40m38s
+epoch  2900/3000 | train 0.035154 | val 0.051187 | best 0.044872 | eta 36m55s
+epoch  2910/3000 | train 0.035064 | val 0.051813 | best 0.044872 | eta 33m11s
+epoch  2920/3000 | train 0.035015 | val 0.052360 | best 0.044872 | eta 29m27s
+epoch  2930/3000 | train 0.034975 | val 0.052238 | best 0.044872 | eta 25m43s
+epoch  2940/3000 | train 0.035369 | val 0.051231 | best 0.044872 | eta 22m0s
+epoch  2950/3000 | train 0.035605 | val 0.051663 | best 0.044872 | eta 18m16s
+epoch  2960/3000 | train 0.035075 | val 0.054182 | best 0.044872 | eta 14m32s
+epoch  2970/3000 | train 0.034953 | val 0.052890 | best 0.044872 | eta 10m48s
+epoch  2980/3000 | train 0.034867 | val 0.052744 | best 0.044872 | eta 7m5s
+epoch  2990/3000 | train 0.034845 | val 0.053644 | best 0.044872 | eta 3m21s
+done in 1118 min | best val 0.044872 | ckpt CheckPts/geodonet_w300_d4_3000ep_lrsched_f301.pt
+loss log + curve -> Predictions/geodonet_w300_d4_3000ep_lrsched_f301/loss.txt , Predictions/geodonet_w300_d4_3000ep_lrsched_f301/loss.png
+=== DONE Wed Jun  3 05:25:48 PM +08 2026 ===

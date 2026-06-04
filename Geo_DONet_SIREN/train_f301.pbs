@@ -1,35 +1,28 @@
 #!/bin/bash
-#PBS -N Geo_DONet_SIREN_f301
-#PBS -l walltime=48:00:00
-#PBS -l select=1:ncpus=32:ngpus=1:mem=400gb
-#PBS -P personal-e1590340
+#PBS -N siren_f301
+#PBS -l select=1:ngpus=1
+#PBS -l walltime=30:00:00
 #PBS -j oe
-
-# Dense-temporal SIREN run on 301-frame (2 ms) training data, vs the original
-# 121-frame (5 ms) SIREN. With 2-3 samples covering the AP upstroke (vs 0-1
-# at step=5), SIREN should produce visibly sharper depolarisation at the
-# Rel L2 level.
 #
-# Memory tuning (after the first attempt OOM'd at batch=12 / chunk=25):
-#   - time_chunk_size 25 → 10 in main.py (halves trunk-recompute peak)
-#   - batch_size 12 → 8 here (shrinks einsum output + gradient memory ~33 %)
-#   - PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to reclaim the
-#     ~800 MB of allocator fragmentation that bit the first attempt.
-# Expected peak: ~30 GB on 40 GB A100, ~10 GB headroom.
+# Plain SIREN on f301 (2 ms sampling) — the f601 npz strided by 2 (--frame-step 2),
+# vs the f121 (5 ms) baseline. With 2-3 samples over the AP upstroke (vs 0-1 at
+# step 5), SIREN should sharpen the depolarisation. Submit:   qsub train_f301.pbs
 #
-# Wall: ~40 h projected (5x the step=5 SIREN × 1.5 for batch=8 × small
-# overhead for finer chunking). Walltime 48 h gives 8 h slack.
+# SIREN gradient-checkpoints the trunk by default (CONFIGURATION GRAD_CHECKPOINT),
+# which is what lets f301 fit the 48 GB A40 at batch 24. expandable_segments cuts
+# allocator fragmentation. ~0.46 min/ep at 3000 ep => ~23 h; 30 h leaves margin.
 
 source ~/load_dimon_env.sh
-cd /home/users/nus/e1590340/cardiac_simulation/DIMON/Geo_DONet_SIREN
+cd /home/svu/e1032484/DIMON_learn/Geo_DONet_SIREN
 
 echo "=== START $(date) ==="
-echo "Node: $(hostname)"
+echo "node: $(hostname)"
 nvidia-smi
 
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 
-python -u main.py --width 300 --batch-size 8 --epochs 3000 \
-                  --device cuda --trunk cobiveco --omega-0 30
+#   -> CheckPts/geodonet_siren_w300_d4_w0_30_3000ep_f301.pt
+python -u main.py --epochs 3000 --width 300 --batch-size 24 \
+    --data-path geo_donet_data_f601.npz --frame-step 2 --omega-0 30 --device cuda
 
 echo "=== DONE $(date) ==="

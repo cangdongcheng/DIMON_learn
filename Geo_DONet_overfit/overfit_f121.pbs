@@ -1,0 +1,17 @@
+#!/bin/bash
+#PBS -N overfit_f121
+#PBS -l select=1:ngpus=1
+#PBS -l walltime=03:00:00
+#PBS -j oe
+
+# Single-case overfit @ f121 (5 ms sampling — upshoot spans < 1 frame; deployment grid).
+# 121 frames fit in 48 GB without gradient checkpointing. Submit: qsub overfit_f121.pbs
+
+# NOTE: no `set -e` — load_dimon_env.sh is written for interactive sourcing and
+# runs best-effort cleanup (`conda deactivate`) that returns non-zero when there is
+# nothing to deactivate. Under `set -e` that aborts the job silently (exit 1, 0-byte
+# log). Every other PBS in this repo sources it without set -e; match that.
+cd "$PBS_O_WORKDIR"
+source ~/load_dimon_env.sh
+
+python overfit.py --frame-step 5 --epochs 5000

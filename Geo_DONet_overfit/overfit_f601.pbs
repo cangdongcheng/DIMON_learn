@@ -1,0 +1,17 @@
+#!/bin/bash
+#PBS -N overfit_f601
+#PBS -l select=1:ngpus=1
+#PBS -l walltime=12:00:00
+#PBS -j oe
+
+# Single-case overfit @ f601 (1 ms sampling — upshoot fully resolved; the clean capacity
+# read). 601 frames need gradient checkpointing to fit 48 GB. Submit: qsub overfit_f601.pbs
+
+# NOTE: no `set -e` — load_dimon_env.sh is written for interactive sourcing and
+# runs best-effort cleanup (`conda deactivate`) that returns non-zero when there is
+# nothing to deactivate. Under `set -e` that aborts the job silently (exit 1, 0-byte
+# log). Every other PBS in this repo sources it without set -e; match that.
+cd "$PBS_O_WORKDIR"
+source ~/load_dimon_env.sh
+
+python overfit.py --frame-step 1 --epochs 5000 --grad-checkpoint
