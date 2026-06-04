@@ -1,0 +1,24 @@
+#!/bin/bash
+#PBS -N gd_ndiff
+#PBS -l walltime=14:00:00
+#PBS -l select=1:ngpus=1
+#PBS -j oe
+
+source ~/load_dimon_env.sh
+cd /home/svu/e1032484/DIMON_learn/Geo_DONet_ndiff
+
+echo "=== START $(date) ==="
+echo "Node: $(hostname)"
+nvidia-smi
+
+# Total loss = MSE + lambda * signed-Laplacian neighbour-diff loss (matches
+# Vm[i] - mean(neighbour Vm) between pred and GT, on the verified canonical mesh).
+#   lambda default 1.0; override per job:  qsub -v LAM=3 train.pbs
+#   lambda=0 == Geo_DONet baseline. NOTE: lambda=0.1 was too low -- nDiff stayed
+#   flat at its init value while MSE fell ~37x. Watch "MSE:" vs "nDiff:" each epoch.
+#   Best-val selection is on Vm MSE (comparable to baseline).
+#   If OOM on the A40 (ndiff op adds ~1.8 GB), drop --batch-size to 16.
+python -u main.py --width 300 --batch-size 24 --epochs 5000 --lr-schedule \
+    --ndiff-weight ${LAM:-1.0} --device cuda
+
+echo "=== DONE $(date) ==="
