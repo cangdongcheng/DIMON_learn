@@ -1,0 +1,146 @@
+Unloading shared
+  WARNING: Did not unuse /cm/shared/modulefiles
+Loading Python/3.11.3-GCCcore-12.3.0
+  Loading requirement: GCCcore/12.3.0 zlib/1.2.13-GCCcore-12.3.0
+    binutils/2.40-GCCcore-12.3.0 bzip2/1.0.8-GCCcore-12.3.0
+    ncurses/6.4-GCCcore-12.3.0 libreadline/8.2-GCCcore-12.3.0
+    Tcl/8.6.13-GCCcore-12.3.0 SQLite/3.42.0-GCCcore-12.3.0
+    XZ/5.4.2-GCCcore-12.3.0 libffi/3.4.4-GCCcore-12.3.0 OpenSSL/1.1
+[dimon env] python   =Python 3.11.3  (/home/svu/e1032484/venvs/dimon/bin/python)
+[dimon env] torch    =2.1.2+cu121 cuda 12.1
+[dimon env] sklearn  =1.3.2
+[dimon env] cuda gpu =True  (False on login nodes is expected)
+=== START Thu Jun  4 03:15:47 PM +08 2026 ===
+node: GN-A40-097
+Thu Jun  4 15:15:48 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 575.57.08              Driver Version: 575.57.08      CUDA Version: 12.9     |
+|-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA A40                     Off |   00000000:0A:00.0 Off |                    0 |
+|  0%   31C    P8             29W /  300W |       0MiB /  46068MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+                                                                                         
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+data: /home/svu/e1032484/scratch/geo_donet_data_f601.npz (frame-step 2)
+  125 cases, 50797 nodes, 301 frames | 95 train / 5 val (25 test held out)
+model: GeoDONetSIREN w300 d4 omega_0=30 | 561,900 params | cuda
+LR: 0.0005 (scheduled -> 0.1x) | chunk 10 frames | grad-checkpoint True
+Laplacian operator: 50797 nodes, 320286 edges, deg[min=5,max=25]
+/nfs/home/svu/e1032484/DIMON_learn/Geo_DONet_SIREN/utils.py:159: UserWarning: Sparse CSR tensor support is in beta state. If you miss a functionality in the sparse tensor support, please submit a feature request to https://github.com/pytorch/pytorch/issues. (Triggered internally at ../aten/src/ATen/SparseCsrTensorImpl.cpp:53.)
+  return ahat.to_sparse_csr().to(device)
+ndiff loss ON: signed-Laplacian, weight=5
+checkpoint -> CheckPts/geodonet_siren_w300_d4_w0_30_3000ep_lrsched_ndiff5_f301.pt | logs -> Predictions/geodonet_siren_w300_d4_w0_30_3000ep_lrsched_ndiff5_f301/
+epoch     0/3000 | train 3.790041 | val 4.825507 | best 4.825507 | ndiff 0.176835 | eta 1395m31s
+epoch    10/3000 | train 0.137817 | val 0.197136 | best 0.197136 | ndiff 0.041117 | eta 1341m20s
+epoch    20/3000 | train 0.069870 | val 0.131802 | best 0.131322 | ndiff 0.021157 | eta 1333m55s
+epoch    30/3000 | train 0.057017 | val 0.107706 | best 0.105390 | ndiff 0.018147 | eta 1327m36s
+epoch    40/3000 | train 0.054486 | val 0.099977 | best 0.094923 | ndiff 0.016979 | eta 1321m59s
+epoch    50/3000 | train 0.051422 | val 0.089843 | best 0.084073 | ndiff 0.016306 | eta 1316m44s
+epoch    60/3000 | train 0.043914 | val 0.074981 | best 0.073121 | ndiff 0.015819 | eta 1311m48s
+epoch    70/3000 | train 0.037190 | val 0.066314 | best 0.066314 | ndiff 0.015448 | eta 1307m1s
+epoch    80/3000 | train 0.035492 | val 0.065136 | best 0.062814 | ndiff 0.015238 | eta 1302m20s
+epoch    90/3000 | train 0.034407 | val 0.061633 | best 0.061633 | ndiff 0.015081 | eta 1297m40s
+epoch   100/3000 | train 0.034224 | val 0.058622 | best 0.057964 | ndiff 0.014958 | eta 1293m4s
+epoch   110/3000 | train 0.033696 | val 0.057670 | best 0.057670 | ndiff 0.014823 | eta 1288m28s
+epoch   120/3000 | train 0.034642 | val 0.061499 | best 0.057670 | ndiff 0.014820 | eta 1283m53s
+epoch   130/3000 | train 0.032475 | val 0.057316 | best 0.054659 | ndiff 0.014743 | eta 1279m22s
+epoch   140/3000 | train 0.030262 | val 0.054162 | best 0.052874 | ndiff 0.014639 | eta 1274m53s
+epoch   150/3000 | train 0.030537 | val 0.057643 | best 0.050554 | ndiff 0.014567 | eta 1270m23s
+epoch   160/3000 | train 0.028806 | val 0.049510 | best 0.049510 | ndiff 0.014475 | eta 1265m52s
+epoch   170/3000 | train 0.029660 | val 0.052946 | best 0.048607 | ndiff 0.014492 | eta 1261m21s
+epoch   180/3000 | train 0.028542 | val 0.049061 | best 0.048527 | ndiff 0.014474 | eta 1256m51s
+epoch   190/3000 | train 0.027617 | val 0.048680 | best 0.048111 | ndiff 0.014381 | eta 1252m21s
+epoch   200/3000 | train 0.028067 | val 0.049440 | best 0.047573 | ndiff 0.014449 | eta 1247m51s
+epoch   210/3000 | train 0.027640 | val 0.052255 | best 0.046997 | ndiff 0.014337 | eta 1243m22s
+epoch   220/3000 | train 0.029169 | val 0.050095 | best 0.046819 | ndiff 0.014337 | eta 1238m53s
+epoch   230/3000 | train 0.029842 | val 0.051877 | best 0.046819 | ndiff 0.014364 | eta 1234m23s
+epoch   240/3000 | train 0.030830 | val 0.049119 | best 0.046819 | ndiff 0.014381 | eta 1229m53s
+epoch   250/3000 | train 0.026732 | val 0.047496 | best 0.046660 | ndiff 0.014261 | eta 1225m23s
+epoch   260/3000 | train 0.025497 | val 0.046114 | best 0.045626 | ndiff 0.014186 | eta 1220m55s
+epoch   270/3000 | train 0.025120 | val 0.045915 | best 0.044270 | ndiff 0.014175 | eta 1216m26s
+epoch   280/3000 | train 0.025594 | val 0.045465 | best 0.044270 | ndiff 0.014155 | eta 1211m57s
+epoch   290/3000 | train 0.026001 | val 0.044476 | best 0.044270 | ndiff 0.014215 | eta 1207m28s
+epoch   300/3000 | train 0.024307 | val 0.044533 | best 0.044052 | ndiff 0.014121 | eta 1202m59s
+epoch   310/3000 | train 0.023978 | val 0.043715 | best 0.042862 | ndiff 0.014132 | eta 1198m31s
+epoch   320/3000 | train 0.023529 | val 0.044471 | best 0.042862 | ndiff 0.014078 | eta 1194m3s
+epoch   330/3000 | train 0.023670 | val 0.043571 | best 0.042862 | ndiff 0.014052 | eta 1189m34s
+epoch   340/3000 | train 0.024959 | val 0.044371 | best 0.042862 | ndiff 0.014078 | eta 1185m5s
+epoch   350/3000 | train 0.024436 | val 0.044645 | best 0.042862 | ndiff 0.014093 | eta 1180m36s
+epoch   360/3000 | train 0.024171 | val 0.045764 | best 0.042456 | ndiff 0.014044 | eta 1176m8s
+epoch   370/3000 | train 0.025037 | val 0.045894 | best 0.042456 | ndiff 0.014039 | eta 1171m39s
+epoch   380/3000 | train 0.024172 | val 0.044781 | best 0.042456 | ndiff 0.014050 | eta 1167m11s
+epoch   390/3000 | train 0.023528 | val 0.043584 | best 0.042244 | ndiff 0.013989 | eta 1162m43s
+epoch   400/3000 | train 0.023350 | val 0.042779 | best 0.041486 | ndiff 0.013989 | eta 1158m15s
+epoch   410/3000 | train 0.023665 | val 0.046165 | best 0.041486 | ndiff 0.013995 | eta 1153m46s
+epoch   420/3000 | train 0.024820 | val 0.045346 | best 0.041339 | ndiff 0.014020 | eta 1149m18s
+epoch   430/3000 | train 0.024106 | val 0.044456 | best 0.041339 | ndiff 0.013999 | eta 1144m50s
+epoch   440/3000 | train 0.023703 | val 0.044948 | best 0.041339 | ndiff 0.013983 | eta 1140m22s
+epoch   450/3000 | train 0.024234 | val 0.044524 | best 0.041339 | ndiff 0.013974 | eta 1135m54s
+epoch   460/3000 | train 0.021849 | val 0.041618 | best 0.041339 | ndiff 0.013921 | eta 1131m25s
+epoch   470/3000 | train 0.022744 | val 0.042761 | best 0.041339 | ndiff 0.013947 | eta 1126m57s
+epoch   480/3000 | train 0.022292 | val 0.042094 | best 0.041327 | ndiff 0.013907 | eta 1122m29s
+epoch   490/3000 | train 0.021277 | val 0.040918 | best 0.040191 | ndiff 0.013892 | eta 1118m1s
+epoch   500/3000 | train 0.021400 | val 0.040828 | best 0.040191 | ndiff 0.013870 | eta 1113m33s
+epoch   510/3000 | train 0.021208 | val 0.041714 | best 0.040191 | ndiff 0.013863 | eta 1109m5s
+epoch   520/3000 | train 0.025779 | val 0.046292 | best 0.040191 | ndiff 0.013991 | eta 1104m37s
+epoch   530/3000 | train 0.022017 | val 0.042362 | best 0.040191 | ndiff 0.013864 | eta 1100m9s
+epoch   540/3000 | train 0.022996 | val 0.043486 | best 0.040191 | ndiff 0.013859 | eta 1095m41s
+epoch   550/3000 | train 0.023427 | val 0.044613 | best 0.040191 | ndiff 0.013934 | eta 1091m13s
+epoch   560/3000 | train 0.021393 | val 0.041872 | best 0.040191 | ndiff 0.013881 | eta 1086m45s
+epoch   570/3000 | train 0.020678 | val 0.041960 | best 0.040191 | ndiff 0.013809 | eta 1082m17s
+epoch   580/3000 | train 0.020265 | val 0.041405 | best 0.040191 | ndiff 0.013786 | eta 1077m49s
+epoch   590/3000 | train 0.020390 | val 0.041277 | best 0.040191 | ndiff 0.013789 | eta 1073m21s
+epoch   600/3000 | train 0.020567 | val 0.042459 | best 0.040191 | ndiff 0.013780 | eta 1068m53s
+epoch   610/3000 | train 0.021101 | val 0.041558 | best 0.040191 | ndiff 0.013793 | eta 1064m25s
+epoch   620/3000 | train 0.021658 | val 0.043551 | best 0.040191 | ndiff 0.013813 | eta 1059m57s
+epoch   630/3000 | train 0.021140 | val 0.042516 | best 0.040191 | ndiff 0.013789 | eta 1055m29s
+epoch   640/3000 | train 0.023465 | val 0.045450 | best 0.040191 | ndiff 0.013927 | eta 1051m1s
+epoch   650/3000 | train 0.022353 | val 0.044147 | best 0.040191 | ndiff 0.013817 | eta 1046m34s
+epoch   660/3000 | train 0.021122 | val 0.041832 | best 0.040191 | ndiff 0.013765 | eta 1042m6s
+epoch   670/3000 | train 0.020890 | val 0.042139 | best 0.040191 | ndiff 0.013770 | eta 1037m38s
+epoch   680/3000 | train 0.020796 | val 0.041558 | best 0.040191 | ndiff 0.013783 | eta 1033m11s
+epoch   690/3000 | train 0.021829 | val 0.041857 | best 0.040191 | ndiff 0.013771 | eta 1028m43s
+epoch   700/3000 | train 0.020223 | val 0.041361 | best 0.040191 | ndiff 0.013744 | eta 1024m15s
+epoch   710/3000 | train 0.019760 | val 0.041050 | best 0.040191 | ndiff 0.013695 | eta 1019m47s
+epoch   720/3000 | train 0.019790 | val 0.040569 | best 0.040191 | ndiff 0.013698 | eta 1015m20s
+epoch   730/3000 | train 0.020569 | val 0.043818 | best 0.040191 | ndiff 0.013694 | eta 1010m52s
+epoch   740/3000 | train 0.938671 | val 0.825586 | best 0.040191 | ndiff 0.193146 | eta 1006m24s
+epoch   750/3000 | train 0.073574 | val 0.110003 | best 0.040191 | ndiff 0.022098 | eta 1001m57s
+epoch   760/3000 | train 0.053042 | val 0.087938 | best 0.040191 | ndiff 0.016304 | eta 997m30s
+epoch   770/3000 | train 0.053415 | val 0.082792 | best 0.040191 | ndiff 0.015683 | eta 993m3s
+epoch   780/3000 | train 0.047559 | val 0.083282 | best 0.040191 | ndiff 0.015269 | eta 988m36s
+epoch   790/3000 | train 0.041799 | val 0.073174 | best 0.040191 | ndiff 0.015137 | eta 984m9s
+epoch   800/3000 | train 0.038472 | val 0.068052 | best 0.040191 | ndiff 0.015038 | eta 979m42s
+epoch   810/3000 | train 0.035957 | val 0.063907 | best 0.040191 | ndiff 0.014805 | eta 975m15s
+epoch   820/3000 | train 0.035095 | val 0.063883 | best 0.040191 | ndiff 0.014696 | eta 970m47s
+epoch   830/3000 | train 0.034910 | val 0.063330 | best 0.040191 | ndiff 0.014592 | eta 966m20s
+epoch   840/3000 | train 0.034237 | val 0.062042 | best 0.040191 | ndiff 0.014533 | eta 961m53s
+epoch   850/3000 | train 0.034238 | val 0.060557 | best 0.040191 | ndiff 0.014497 | eta 957m26s
+epoch   860/3000 | train 0.033234 | val 0.060767 | best 0.040191 | ndiff 0.014405 | eta 952m58s
+epoch   870/3000 | train 0.033145 | val 0.060098 | best 0.040191 | ndiff 0.014392 | eta 948m31s
+epoch   880/3000 | train 0.033476 | val 0.059968 | best 0.040191 | ndiff 0.014402 | eta 944m4s
+epoch   890/3000 | train 0.032766 | val 0.059783 | best 0.040191 | ndiff 0.014327 | eta 939m37s
+epoch   900/3000 | train 0.032090 | val 0.058980 | best 0.040191 | ndiff 0.014280 | eta 935m9s
+epoch   910/3000 | train 0.032697 | val 0.060335 | best 0.040191 | ndiff 0.014326 | eta 930m42s
+epoch   920/3000 | train 0.031669 | val 0.057563 | best 0.040191 | ndiff 0.014249 | eta 926m15s
+epoch   930/3000 | train 0.031414 | val 0.057225 | best 0.040191 | ndiff 0.014268 | eta 921m48s
+epoch   940/3000 | train 0.031437 | val 0.058097 | best 0.040191 | ndiff 0.014266 | eta 917m20s
+epoch   950/3000 | train 0.031434 | val 0.057042 | best 0.040191 | ndiff 0.014254 | eta 912m53s
+epoch   960/3000 | train 0.031771 | val 0.056329 | best 0.040191 | ndiff 0.014294 | eta 908m26s
+epoch   970/3000 | train 0.030445 | val 0.055252 | best 0.040191 | ndiff 0.014218 | eta 903m59s
+epoch   980/3000 | train 0.030401 | val 0.056587 | best 0.040191 | ndiff 0.014223 | eta 899m31s
+early stop at epoch 988: no val improvement for 500 epochs (best val 0.040191)
+done in 440 min | best val 0.040191 | ckpt CheckPts/geodonet_siren_w300_d4_w0_30_3000ep_lrsched_ndiff5_f301.pt
+loss log + curve -> Predictions/geodonet_siren_w300_d4_w0_30_3000ep_lrsched_ndiff5_f301/loss.txt , Predictions/geodonet_siren_w300_d4_w0_30_3000ep_lrsched_ndiff5_f301/loss.png
+=== DONE Thu Jun  4 10:38:42 PM +08 2026 ===

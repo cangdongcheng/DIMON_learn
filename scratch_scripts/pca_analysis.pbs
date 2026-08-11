@@ -1,0 +1,30 @@
+#!/bin/bash
+#PBS -N pca_temporal
+#PBS -q cpu_parallel
+#PBS -l select=1:ncpus=16:mem=96gb
+#PBS -l walltime=04:00:00
+#PBS -j oe
+#
+# Temporal-PCA analysis of nodewise V_m(t).  CPU only (no GPU).  Submit:
+#   qsub pca_analysis.pbs                       # f601 (1 ms) — full upstroke resolution
+#   qsub -v STEP=2 pca_analysis.pbs             # f301 (2 ms)
+#   qsub -v STEP=5 pca_analysis.pbs             # f121 (5 ms)
+#
+# NB: NO `set -e` — load_dimon_env.sh's `conda deactivate` returns rc=1 and would
+# abort the job (see VANDA_HANDOFF Vanda PBS conventions).
+
+source ~/load_dimon_env.sh
+cd /home/svu/e1032484/DIMON_learn/scratch_scripts
+
+STEP=${STEP:-1}
+TAG=$([ "$STEP" = 1 ] && echo f601 || ([ "$STEP" = 2 ] && echo f301 || echo f121))
+
+echo "=== START $(date) ==="
+echo "node: $(hostname)  step=$STEP tag=$TAG"
+
+python -u pca_temporal_analysis.py \
+    --frame-step "$STEP" \
+    --out  /home/svu/e1032484/scratch/pca_temporal_$TAG \
+    --basis-out /home/svu/e1032484/scratch/pca_temporal_basis_$TAG.npz
+
+echo "=== DONE $(date) ==="

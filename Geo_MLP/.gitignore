@@ -1,0 +1,4 @@
+__pycache__/
+CheckPts/
+Predictions/
+*.o[0-9]*

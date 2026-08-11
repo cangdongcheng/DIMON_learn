@@ -1,0 +1,41 @@
+#!/bin/bash
+#PBS -N pca_phase
+#PBS -q cpu_parallel
+#PBS -l select=1:ncpus=16:mem=96gb
+#PBS -l walltime=08:00:00
+#PBS -j oe
+#
+# Oracle phase-aligned lookup-template + residual-PCA analysis. CPU only.
+# Submit from scratch_scripts/:
+#   qsub phase_aligned_pca.pbs                    # f601 (1 ms)
+#   qsub -v STEP=2 phase_aligned_pca.pbs          # f301 (2 ms)
+#   qsub -v STEP=5 phase_aligned_pca.pbs          # f121 (5 ms)
+#
+# The two passes over the 15 GB V_m array build train-only node templates and
+# then the residual covariance.  f601 is the main experiment; the longer
+# walltime relative to pca_analysis.pbs leaves room for phase interpolation.
+#
+# NB: NO `set -e` -- load_dimon_env.sh's initial conda deactivate may return 1.
+
+source ~/load_dimon_env.sh
+cd /home/svu/e1032484/DIMON_learn/scratch_scripts
+
+STEP=${STEP:-1}
+TAG=$([ "$STEP" = 1 ] && echo f601 || ([ "$STEP" = 2 ] && echo f301 || echo f121))
+UNALIGNED=/home/svu/e1032484/scratch/pca_temporal_$TAG/recon_vs_k.csv
+# The original completed f601 run predates the _f601 output suffix.
+if [ "$STEP" = 1 ] && [ ! -f "$UNALIGNED" ]; then
+    UNALIGNED=/home/svu/e1032484/scratch/pca_temporal/recon_vs_k.csv
+fi
+
+echo "=== START $(date) ==="
+echo "node: $(hostname)  step=$STEP tag=$TAG"
+
+python -u phase_aligned_pca_analysis.py \
+    --frame-step "$STEP" \
+    --pca-center node \
+    --out /home/svu/e1032484/scratch/pca_phase_aligned_$TAG \
+    --basis-out /home/svu/e1032484/scratch/pca_phase_aligned_basis_$TAG.npz \
+    --unaligned-csv "$UNALIGNED"
+
+echo "=== DONE $(date) ==="

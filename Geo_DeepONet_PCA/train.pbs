@@ -1,0 +1,24 @@
+#!/bin/bash
+#PBS -N Geo_DeepONet_PCA
+#PBS -l select=1:ngpus=1
+#PBS -l walltime=24:00:00
+#PBS -j oe
+#
+# Prepare the compact feature file on a CPU node first (README.md), then submit
+# this script from Geo_DeepONet_PCA/.  Do not add `set -e`: the environment
+# loader's initial conda deactivate may return status 1.
+
+source ~/load_dimon_env.sh
+cd /home/svu/e1032484/DIMON_learn/Geo_DeepONet_PCA
+
+echo "=== START $(date) ==="
+echo "node: $(hostname)"
+
+python -u main.py \
+    --device cuda \
+    --epochs 50000 \
+    --batch-size 95 \
+    --n-components 5 \
+    --lr 5e-4
+
+echo "=== DONE $(date) ==="

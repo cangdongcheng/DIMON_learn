@@ -1,0 +1,29 @@
+#!/bin/bash
+#PBS -N Geo_MLP_CV
+#PBS -l select=1:ngpus=1
+#PBS -l walltime=24:00:00
+#PBS -j oe
+#
+# Five-fold CV using the same architecture/training configuration as the first
+# Geo_MLP experiment. Submit from Geo_MLP/: qsub cv.pbs
+
+source ~/load_dimon_env.sh
+cd /home/svu/e1032484/DIMON_learn/Geo_MLP
+
+echo "=== START $(date) ==="
+echo "node: $(hostname)"
+nvidia-smi
+
+python -u main_cv.py \
+    --device cuda \
+    --epochs 5000 \
+    --width 300 \
+    --depth 4 \
+    --case-batch-size 8 \
+    --samples-per-case 4096 \
+    --val-samples-per-case 16384 \
+    --frame-step 5 \
+    --lr-scheduled \
+    --patience 500
+
+echo "=== DONE $(date) ==="

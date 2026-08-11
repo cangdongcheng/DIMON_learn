@@ -1,0 +1,27 @@
+#!/bin/bash
+#PBS -N Geo_MLP
+#PBS -l select=1:ngpus=1
+#PBS -l walltime=01:00:00
+#PBS -j oe
+#
+# Submit from Geo_MLP/: qsub train.pbs
+
+source ~/load_dimon_env.sh
+cd /home/svu/e1032484/DIMON_learn/Geo_MLP
+
+echo "=== START $(date) ==="
+echo "node: $(hostname)"
+nvidia-smi
+
+python -u main.py \
+    --device cuda \
+    --epochs 5000 \
+    --width 300 \
+    --depth 4 \
+    --case-batch-size 8 \
+    --samples-per-case 4096 \
+    --val-samples-per-case 16384 \
+    --frame-step 5 \
+    --lr-scheduled
+
+echo "=== DONE $(date) ==="

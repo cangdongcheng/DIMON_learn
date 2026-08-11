@@ -1,0 +1,19 @@
+#!/bin/bash
+#PBS -N spatial_blur
+#PBS -q cpu_parallel
+#PBS -l select=1:ncpus=16:mem=64gb
+#PBS -l walltime=02:00:00
+#PBS -j oe
+#
+# Spatial-only mesh-neighbour smoothing diagnostic. Submit from scratch_scripts/.
+# No `set -e`: load_dimon_env.sh may return status 1 while deactivating conda.
+
+source ~/load_dimon_env.sh
+cd /home/svu/e1032484/DIMON_learn/scratch_scripts
+
+echo "=== START $(date) ==="
+echo "node: $(hostname)"
+
+python -u spatial_blur_diagnostic.py --num-cases 1
+
+echo "=== DONE $(date) ==="

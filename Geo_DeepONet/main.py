@@ -7,7 +7,8 @@ Single fixed 7-node Durrer activation — geometry is the only input variable.
 Input:  theta (N, 60) PCA geometry + Cobiveco (M, 4) trunk
 Output: AT(x) on reference mesh (N, M)
 
-Data:   geo_deeponet_data.npz from package_training_data.py
+Data:   compact f601 AT+PCA npz (AT is targets[...,0]), or legacy
+        geo_deeponet_data.npz (AT key ``at``).
 
 Evaluation outputs (--test-model 1) — all SVG, transparent background:
   Test/  heart{h}_AT_{GT,Pred,AbsErr}.svg   — 3D AT scatters (rasterised)
@@ -50,9 +51,6 @@ import matplotlib.pyplot as plt
 import random
 from concurrent.futures import ProcessPoolExecutor
 
-DATA_BASE = "/home/users/nus/e1590340/scratch/Mengxiao_20260212_VTK_Merged_ED_CSV"
-
-
 # ── Module-level worker for parallel 3D scatter rendering ──────────────────
 # ProcessPoolExecutor requires a top-level (picklable) function. The shared
 # cartesian_coords is passed via the pool initializer to avoid re-serializing
@@ -94,10 +92,9 @@ def set_seed(seed=42):
 
 
 def main():
-    set_seed(42)
-
     ## 1. Hyperparameters & Configuration
     args = ParseArgument()
+    set_seed(args.seed)
     device = args.device
     epochs = args.epochs
     test_model = args.test_model
@@ -107,11 +104,11 @@ def main():
 
     # Architecture dimensions
     num_geomode = 60
-    dim_br_geo = [num_geomode, 200, 200, 200, 200]
-    dim_tr = [4, 200, 200, 200, 200]  # 4D Cobiveco trunk
+    dim_br_geo = [num_geomode] + [args.width] * args.depth
+    dim_tr = [4] + [args.width] * args.depth  # 4D Cobiveco trunk
 
-    batch_size = 96
-    learning_rate = 0.0005
+    batch_size = args.batch_size
+    learning_rate = args.lr
 
     save_directory = f'cobiveco_{normalize}norm_{epochs}ep_{learning_rate}lr'
 
@@ -123,19 +120,30 @@ def main():
     os.makedirs('CheckPts', exist_ok=True)
 
     ## 2. Load Dataset
-    dataset = np.load(os.path.join(DATA_BASE, "geo_deeponet_data.npz"),
-                      allow_pickle=True)
+    dataset = np.load(args.data_path, allow_pickle=True)
     theta = dataset['theta'][:, :num_geomode]  # (125, 60)
     x_data = dataset['coords']                  # (50797, 4) Cobiveco
-    u_all = dataset['at']                       # (125, 50797)
-    case_names = dataset['case_names']
+    if 'at' in dataset.files:
+        u_all = dataset['at'].astype(np.float32)
+        at_source = "legacy key 'at'"
+    elif 'targets' in dataset.files:
+        targets = dataset['targets']
+        if targets.ndim != 3 or targets.shape[2] < 1:
+            raise SystemExit(f"{args.data_path}: targets must be (cases,nodes,features)")
+        u_all = targets[..., 0].astype(np.float32)
+        at_source = "compact targets[...,0] (-10 mV crossing)"
+    else:
+        raise SystemExit(f"{args.data_path}: expected key 'at' or 'targets'")
+    case_names = (dataset['case_names'] if 'case_names' in dataset.files else
+                  np.asarray([f"case{i}" for i in range(len(theta))]))
 
     num_train_hearts = 95
     num_val_hearts = 5
-    num_test_hearts = 25
+    num_test_hearts = theta.shape[0] - num_train_hearts - num_val_hearts
 
     num_pts = x_data.shape[0]
     print(f"Data: {theta.shape[0]} cases, {num_pts} nodes, {num_geomode} PCA modes")
+    print(f"AT source: {at_source} | {args.data_path}")
     print(f"Split: {num_train_hearts} train / {num_val_hearts} val / {num_test_hearts} test")
 
     ## Split
@@ -161,6 +169,7 @@ def main():
 
         # Normalize Branch Geometry (z-score)
         f_mean, f_std = f_train.mean(axis=0), f_train.std(axis=0)
+        f_std[f_std < 1e-8] = 1.0
         f_train_norm = (f_train - f_mean) / f_std
         f_val_norm = (f_val - f_mean) / f_std
         f_test_norm = (f_test - f_mean) / f_std
@@ -200,6 +209,7 @@ def main():
 
         train_loss_his, test_loss_his = [], []
         best_val_loss = float('inf')
+        best_epoch = -1
 
         tic = time.time()
         for epoch in range(epochs):
@@ -226,6 +236,7 @@ def main():
 
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
+                best_epoch = epoch
                 torch.save({'model_state_dict': model.state_dict()}, model_path)
 
             if epoch % 100 == 0:
@@ -235,6 +246,11 @@ def main():
                 print(f'Epoch: {epoch} | Train: {avg_train_loss:.6f} | '
                       f'Val: {val_loss:.6f} | Best Val: {best_val_loss:.6f} | '
                       f'Test: {test_loss:.6f} | MAE: {mae:.2f} ms', flush=True)
+
+            if args.patience > 0 and best_epoch >= 0 and epoch - best_epoch >= args.patience:
+                print(f"Early stop at epoch {epoch}: no validation improvement for "
+                      f"{args.patience} epochs (best {best_val_loss:.6f} @ {best_epoch})")
+                break
 
         print(f"Total training time: {int((time.time() - tic) / 60)} min")
         np.savetxt(f'./Predictions/{save_directory}/train_loss.txt',
@@ -265,10 +281,14 @@ def main():
         print("--- Generating Evaluation ---")
         num_viz_hearts = min(args.viz_hearts, num_test_hearts)
 
-        # Load cartesian coords for 3D plotting (shared with worker pool)
-        dimon_data = np.load(os.path.join(os.path.dirname(__file__), "..",
-                                           "DIMON_training_data_healthy.npz"))
-        cartesian_coords = dimon_data['cartesian_coords']  # (50797, 3)
+        # Load Cartesian coordinates only when plots were requested.
+        cartesian_coords = None
+        if not args.skip_plots:
+            xyz_data = np.load(args.reference_xyz)
+            cartesian_coords = xyz_data['cartesian_coords'].astype(np.float32)
+            if cartesian_coords.shape[0] != num_pts:
+                raise SystemExit(f"reference xyz has {cartesian_coords.shape[0]} nodes, "
+                                 f"but AT data has {num_pts}")
 
         with torch.no_grad():
             # Warm up (first call has overhead)

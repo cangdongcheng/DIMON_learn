@@ -40,3 +40,86 @@ epoch   1150/5000 | train MSE 1.094e-01 | best 9.884e-02 | eta 68m13s
 epoch   1200/5000 | train MSE 9.609e-02 | best 9.609e-02 | eta 67m18s
 epoch   1250/5000 | train MSE 9.019e-02 | best 9.019e-02 | eta 66m27s
 epoch   1300/5000 | train MSE 9.464e-02 | best 8.679e-02 | eta 65m34s
+epoch   1350/5000 | train MSE 8.665e-02 | best 8.665e-02 | eta 64m38s
+epoch   1400/5000 | train MSE 8.215e-02 | best 8.215e-02 | eta 63m47s
+epoch   1450/5000 | train MSE 7.871e-02 | best 7.871e-02 | eta 62m55s
+epoch   1500/5000 | train MSE 9.203e-02 | best 7.605e-02 | eta 62m3s
+epoch   1550/5000 | train MSE 7.993e-02 | best 7.605e-02 | eta 61m7s
+epoch   1600/5000 | train MSE 7.499e-02 | best 7.499e-02 | eta 60m13s
+epoch   1650/5000 | train MSE 7.197e-02 | best 7.197e-02 | eta 59m21s
+epoch   1700/5000 | train MSE 6.931e-02 | best 6.931e-02 | eta 58m29s
+epoch   1750/5000 | train MSE 7.085e-02 | best 6.920e-02 | eta 57m34s
+epoch   1800/5000 | train MSE 6.665e-02 | best 6.665e-02 | eta 56m41s
+epoch   1850/5000 | train MSE 6.438e-02 | best 6.438e-02 | eta 55m49s
+epoch   1900/5000 | train MSE 8.577e-02 | best 6.304e-02 | eta 54m56s
+epoch   1950/5000 | train MSE 6.418e-02 | best 6.304e-02 | eta 54m1s
+epoch   2000/5000 | train MSE 6.127e-02 | best 6.127e-02 | eta 53m8s
+epoch   2050/5000 | train MSE 5.963e-02 | best 5.963e-02 | eta 52m16s
+epoch   2100/5000 | train MSE 7.374e-02 | best 5.859e-02 | eta 51m23s
+epoch   2150/5000 | train MSE 5.822e-02 | best 5.809e-02 | eta 50m29s
+epoch   2200/5000 | train MSE 5.662e-02 | best 5.662e-02 | eta 49m36s
+epoch   2250/5000 | train MSE 5.558e-02 | best 5.558e-02 | eta 48m44s
+epoch   2300/5000 | train MSE 5.593e-02 | best 5.555e-02 | eta 47m49s
+epoch   2350/5000 | train MSE 5.422e-02 | best 5.422e-02 | eta 46m56s
+epoch   2400/5000 | train MSE 5.322e-02 | best 5.322e-02 | eta 46m4s
+epoch   2450/5000 | train MSE 5.405e-02 | best 5.305e-02 | eta 45m10s
+epoch   2500/5000 | train MSE 5.196e-02 | best 5.196e-02 | eta 44m17s
+epoch   2550/5000 | train MSE 5.104e-02 | best 5.104e-02 | eta 43m24s
+epoch   2600/5000 | train MSE 5.373e-02 | best 5.103e-02 | eta 42m30s
+epoch   2650/5000 | train MSE 5.057e-02 | best 5.057e-02 | eta 41m36s
+epoch   2700/5000 | train MSE 4.956e-02 | best 4.956e-02 | eta 40m44s
+epoch   2750/5000 | train MSE 4.870e-02 | best 4.870e-02 | eta 39m51s
+epoch   2800/5000 | train MSE 4.792e-02 | best 4.792e-02 | eta 38m58s
+epoch   2850/5000 | train MSE 4.775e-02 | best 4.767e-02 | eta 38m4s
+epoch   2900/5000 | train MSE 4.665e-02 | best 4.665e-02 | eta 37m11s
+epoch   2950/5000 | train MSE 4.908e-02 | best 4.642e-02 | eta 36m18s
+epoch   3000/5000 | train MSE 4.574e-02 | best 4.574e-02 | eta 35m25s
+epoch   3050/5000 | train MSE 4.489e-02 | best 4.489e-02 | eta 34m32s
+epoch   3100/5000 | train MSE 5.001e-02 | best 4.451e-02 | eta 33m39s
+epoch   3150/5000 | train MSE 4.453e-02 | best 4.451e-02 | eta 32m45s
+epoch   3200/5000 | train MSE 4.352e-02 | best 4.352e-02 | eta 31m52s
+epoch   3250/5000 | train MSE 4.277e-02 | best 4.277e-02 | eta 30m59s
+epoch   3300/5000 | train MSE 4.506e-02 | best 4.230e-02 | eta 30m6s
+epoch   3350/5000 | train MSE 4.240e-02 | best 4.230e-02 | eta 29m12s
+epoch   3400/5000 | train MSE 4.144e-02 | best 4.144e-02 | eta 28m19s
+epoch   3450/5000 | train MSE 4.074e-02 | best 4.074e-02 | eta 27m27s
+epoch   3500/5000 | train MSE 4.042e-02 | best 4.016e-02 | eta 26m34s
+epoch   3550/5000 | train MSE 4.081e-02 | best 4.016e-02 | eta 25m40s
+epoch   3600/5000 | train MSE 3.965e-02 | best 3.965e-02 | eta 24m47s
+epoch   3650/5000 | train MSE 3.896e-02 | best 3.896e-02 | eta 23m54s
+epoch   3700/5000 | train MSE 3.835e-02 | best 3.835e-02 | eta 23m1s
+epoch   3750/5000 | train MSE 3.857e-02 | best 3.827e-02 | eta 22m7s
+epoch   3800/5000 | train MSE 3.763e-02 | best 3.763e-02 | eta 21m14s
+epoch   3850/5000 | train MSE 3.702e-02 | best 3.702e-02 | eta 20m21s
+epoch   3900/5000 | train MSE 3.928e-02 | best 3.680e-02 | eta 19m28s
+epoch   3950/5000 | train MSE 3.628e-02 | best 3.628e-02 | eta 18m35s
+epoch   4000/5000 | train MSE 3.567e-02 | best 3.567e-02 | eta 17m42s
+epoch   4050/5000 | train MSE 4.332e-02 | best 3.531e-02 | eta 16m49s
+epoch   4100/5000 | train MSE 3.562e-02 | best 3.531e-02 | eta 15m55s
+epoch   4150/5000 | train MSE 3.480e-02 | best 3.480e-02 | eta 15m2s
+epoch   4200/5000 | train MSE 4.144e-02 | best 3.437e-02 | eta 14m9s
+epoch   4250/5000 | train MSE 3.390e-02 | best 3.387e-02 | eta 13m16s
+epoch   4300/5000 | train MSE 3.329e-02 | best 3.329e-02 | eta 12m23s
+epoch   4350/5000 | train MSE 3.279e-02 | best 3.279e-02 | eta 11m30s
+epoch   4400/5000 | train MSE 3.418e-02 | best 3.264e-02 | eta 10m36s
+epoch   4450/5000 | train MSE 3.216e-02 | best 3.216e-02 | eta 9m43s
+epoch   4500/5000 | train MSE 3.168e-02 | best 3.168e-02 | eta 8m50s
+epoch   4550/5000 | train MSE 3.123e-02 | best 3.123e-02 | eta 7m57s
+epoch   4600/5000 | train MSE 3.244e-02 | best 3.105e-02 | eta 7m4s
+epoch   4650/5000 | train MSE 3.072e-02 | best 3.072e-02 | eta 6m11s
+epoch   4700/5000 | train MSE 3.026e-02 | best 3.026e-02 | eta 5m17s
+epoch   4750/5000 | train MSE 2.999e-02 | best 2.999e-02 | eta 4m24s
+epoch   4800/5000 | train MSE 2.955e-02 | best 2.955e-02 | eta 3m31s
+epoch   4850/5000 | train MSE 3.255e-02 | best 2.926e-02 | eta 2m38s
+epoch   4900/5000 | train MSE 2.904e-02 | best 2.899e-02 | eta 1m45s
+epoch   4950/5000 | train MSE 2.860e-02 | best 2.860e-02 | eta 0m52s
+epoch   4999/5000 | train MSE 2.982e-02 | best 2.844e-02 | eta 0m0s
+done in 88.6 min | best train MSE 2.844e-02
+overfit summary — IMMC001_20150716_merge_000 | f121 | w300 d4
+  final train MSE (normalized)   : 2.982e-02  (best 2.844e-02)
+  overall V_m Rel L2 (phys mV)   : 0.1368
+  per-frame Rel L2 peak          : 0.4321 at t=100 ms
+  activation-time MAE            : 5.58 ms  (over 50797 nodes active in both)
+  median max dV/dt true vs pred  : 21.20 vs 5.38 mV/ms (25% of GT steepness)
+  files: loss.png frame_error.png traces.png at_scatter.png upstroke.png
+diagnostics -> Predictions/case0_f121_w300_d4/

@@ -10,8 +10,17 @@ Active variants: **Geo_DONet** (clean rewrite), **Geo_DONet_SIREN**, **Geo_DONet
 > 4-file package: `main.py` (CONFIGURATION + CLI + train/infer), `opnn.py` (architecture +
 > checkpoint loaders), `utils.py` (data + evaluation, numpy/torch only), `viz.py` (rendering/IO).
 > Modes: train (default) / `--test-model` / `--infer`. Weights-only checkpoints; can still load
-> the OLD opnn checkpoints (legacy-key remap). `Geo_DONet_SIREN/` and `Geo_DONet_ndiff/` remain
-> the old opnn variants. See **Code edits → Geo_DONet/**.
+> the OLD opnn checkpoints (legacy-key remap). See **Code edits → Geo_DONet/**.
+
+> **2026-06-04 — Geo_DONet_SIREN is now a clean rewrite too** (same 4-file structure as
+> Geo_DONet). The 777-line monolithic `main.py` + old `opnn.py` are archived under
+> `Geo_DONet_SIREN/_old_monolithic/`; the new package is `main.py`/`opnn.py` + **self-contained
+> copies** of Geo_DONet's `utils.py`/`viz.py` (user chose copy over import-coupling). Kept the
+> **ndiff loss**, **dropped** the `--trunk xyz` option (Cobiveco-only now, like the baseline),
+> dropped the legacy learnable bias. SIREN checkpoints store `{model_state_dict, config}` (config
+> carries `omega_0`, which is NOT inferable from weights) — and the loader still reads the OLD
+> original-opnn SIREN checkpoints (legacy-key remap, omega_0 assumed 30). `Geo_DONet_ndiff/`
+> remains an old-opnn variant. See **Code edits → Geo_DONet_SIREN/**.
 
 > **2026-06-03 — single-case overfit capacity test (`Geo_DONet_overfit/`).** To separate
 > *capacity* from *generalization* in the upshoot-smearing problem (prior runs all blamed the
@@ -166,15 +175,34 @@ non-adjacent nodes. `Geo_DONet_ndiff` re-tests the idea with the verified adjace
   2026-06-04 by removing `set -e` from all three (see Vanda PBS conventions). Verified the corrected
   flow reaches Python with all imports loading. **Ready to resubmit.**
 
-**Geo_DONet_SIREN/**
-- [main.py:100-103](Geo_DONet_SIREN/main.py#L100-L103) — same `DATA_BASE` env var, plus `DIMON_DATA_FILE` (default `geo_donet_data_f121.npz`). NSCC original was hardcoded to `geo_donet_data_f301.npz`, which we don't have.
-- [utils.py:37-41](Geo_DONet_SIREN/utils.py#L37-L41) — new `--frame-step K` CLI arg (default 1). Subsamples the loaded npz along time with stride K, so f601 + `--frame-step 2` reproduces f301 on the fly.
-- [main.py:191](Geo_DONet_SIREN/main.py#L191) — `frame_step = args.frame_step` (was hardcoded `1`).
-- [main.py:238-244](Geo_DONet_SIREN/main.py#L238-L244) — `save_directory` is built **after** subsampling, with `_f{n_time}` derived from the actual frame count, so a derived f301 run writes to the same checkpoint path the NSCC f301 run would have used.
-- [train.pbs](Geo_DONet_SIREN/train.pbs) — Vanda PBS header; walltime 24h; `export DIMON_DATA_FILE=geo_donet_data_f601.npz` + `--frame-step 2 --epochs 3000 --trunk cobiveco`.
-- [train_f301.pbs](Geo_DONet_SIREN/train_f301.pbs) — **not edited**; still NSCC header + missing-data filename. Use `train.pbs` instead.
-- [utils.py](Geo_DONet_SIREN/utils.py) / [main.py](Geo_DONet_SIREN/main.py) — **ndiff loss added** (2026-05-29): same `--ndiff-weight λ` + `--adj-file` + signed-Laplacian loss as Geo_DONet_ndiff (`--ndiff-weight 0` == baseline SIREN, so the running baseline job is unaffected); `save_directory` gets a `_ndiff{λ}` tag.
-- [train_ndiff.pbs](Geo_DONet_SIREN/train_ndiff.pbs) — SIREN + ndiff on **f121** (λ=1.0 default, ω₀=30, w300, 5000 ep), deliberately matching Geo_DONet_ndiff so Tanh-vs-SIREN is the only difference. Override λ with `qsub -v LAM=3`. Validated: compiles + args parse; NOT yet run on GPU (watch A40 memory — SIREN checkpoints the trunk and ndiff adds ~1.8 GB; drop `--batch-size 16` if OOM).
+**Geo_DONet_SIREN/** — clean rewrite (2026-06-04; mirrors Geo_DONet's 4-file structure)
+- 4 files: `main.py` (CONFIGURATION + CLI + `train()`/`infer()`/`main()`), `opnn.py`
+  (`GeoDONetSIREN` = Tanh branch + **SineLayer** SIREN trunk, `build_trunk_chunks`/`chunked_forward`,
+  checkpoint loaders), and **self-contained copies** of Geo_DONet's `utils.py` (data + eval +
+  the **ndiff** `build_laplacian_operator`/`signed_laplacian_loss`) and `viz.py` (unchanged).
+  The pre-rewrite monolith (`main.py` 777 lines + old `opnn.py` + `plot_*.py`) is in
+  `_old_monolithic/`.
+- **Modes** identical to Geo_DONet: train (default) / `--test-model` / `--infer`, same flags
+  (`--snapshot`/`--vtu-out`/`--color-bar`/`--save`/`--cases`/`--n-viz`/`--train-data`/`--frame-step`).
+- **SIREN-specific over the baseline**: `--omega-0` (default 30; CONFIGURATION `OMEGA_0`),
+  `--ndiff-weight λ` + `--adj-file` (default `mesh_adjacency_data_order.npz`), `--grad-checkpoint`
+  **on by default** (`GRAD_CHECKPOINT=True` — SIREN trunk activations need it even at f121),
+  `CHUNK_FRAMES=10` (vs Tanh's 25), flat LR default **1e-4** (SIREN trains below the Tanh LR).
+- **Checkpoints store `{model_state_dict, config}`** — unlike the shape-only GeoDONet checkpoints,
+  because `omega_0` is a forward-time multiplier, not a weight, so it can't be inferred from the
+  state_dict. Loader: new ckpts use the saved `config`; **legacy original-opnn SIREN ckpts**
+  (`_branch_g`/`_trunk.linear`/scalar `bias`, no config) are remapped, arch inferred from shapes,
+  `omega_0` defaulted to **30** (what all original SIREN runs used); the unused legacy bias dropped.
+- **Naming**: `geodonet_siren_w{w}_d{d}_w0_{ω}_{ep}ep[_lrsched][_ndiff{λ}][_f{frames}]`.
+- **PBS** (Vanda, submit from the folder): `train.pbs` (plain f121, 5000 ep), `train_f301.pbs`
+  (plain f301, 3000 ep — the stale NSCC header/path is **fixed**), `train_ndiff.pbs` (SIREN+ndiff
+  f121, scheduled LR), `train_ndiff_f301.pbs` (SIREN+ndiff f301, 3000 ep). ndiff scripts pass
+  `--lr 5e-4 --lr-scheduled` (reproduces the original 5e-4→5e-5) and take `qsub -v LAM=<λ>`.
+- **Validated (CPU, 2026-06-04)**: all 4 files compile; `chunked_forward` grad-checkpoint path
+  bit-identical to plain; `signed_laplacian_loss` differentiable; **all 3 existing trained SIREN
+  checkpoints** (1142478/1147941/1148776) load via the legacy remap; new-format checkpoint
+  round-trips with a non-default `omega_0`. NOT yet run on GPU — the first GPU job is also the
+  first end-to-end test of the rewrite.
 
 **Geo_DONet_ndiff/** (new variant — copy of Geo_DONet + a spatial loss; 2026-05-29)
 - Total loss `= MSE + λ·mean((L·E)²)`, `E=pred−gt`, `L=I−D⁻¹A` (signed neighbour difference on
