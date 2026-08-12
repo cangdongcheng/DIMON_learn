@@ -1,7 +1,7 @@
 #!/bin/bash
 #PBS -N Geo_DeepONet_PCA
-#PBS -l select=1:ngpus=1
-#PBS -l walltime=24:00:00
+#PBS -l select=1:ncpus=8:ngpus=1:mem=64gb
+#PBS -l walltime=01:00:00
 #PBS -j oe
 #
 # Prepare the compact feature file on a CPU node first (README.md), then submit
@@ -16,9 +16,13 @@ echo "node: $(hostname)"
 
 python -u main.py \
     --device cuda \
-    --epochs 50000 \
-    --batch-size 95 \
+    --epochs 5000 \
+    --batch-size 8 \
+    --nodes-per-step 2048 \
+    --val-nodes 4096 \
     --n-components 5 \
-    --lr 5e-4
+    --feature-loss-weight 0 \
+    --lr 5e-4 \
+    --patience 1000
 
 echo "=== DONE $(date) ==="

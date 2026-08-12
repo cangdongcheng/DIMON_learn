@@ -1,0 +1,35 @@
+#!/bin/bash
+#PBS -N Geo_DeepONet_PCA_CV
+#PBS -l select=1:ncpus=16:ngpus=1:mem=96gb
+#PBS -l walltime=04:00:00
+#PBS -j oe
+#
+# Leakage-safe five-fold CV. Submit from Geo_DeepONet_PCA/: qsub cv.pbs
+# Do not add `set -e`; load_dimon_env.sh may return status 1 while deactivating
+# a nonexistent conda environment.
+
+source ~/load_dimon_env.sh
+cd /home/svu/e1032484/DIMON_learn/Geo_DeepONet_PCA
+
+echo "=== START $(date) ==="
+echo "node: $(hostname)"
+nvidia-smi
+
+export OMP_NUM_THREADS=16
+export MKL_NUM_THREADS=16
+export OPENBLAS_NUM_THREADS=16
+
+python -u main_cv.py \
+    --device cuda \
+    --epochs 5000 \
+    --batch-size 8 \
+    --nodes-per-step 2048 \
+    --val-nodes 4096 \
+    --n-components 5 \
+    --width 200 \
+    --depth 4 \
+    --lr 5e-4 \
+    --val-every 10 \
+    --reference-at 80
+
+echo "=== DONE $(date) ==="

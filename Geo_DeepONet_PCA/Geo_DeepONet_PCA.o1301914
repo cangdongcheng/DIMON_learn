@@ -1,0 +1,48 @@
+Unloading shared
+  WARNING: Did not unuse /cm/shared/modulefiles
+Loading Python/3.11.3-GCCcore-12.3.0
+  Loading requirement: GCCcore/12.3.0 zlib/1.2.13-GCCcore-12.3.0
+    binutils/2.40-GCCcore-12.3.0 bzip2/1.0.8-GCCcore-12.3.0
+    ncurses/6.4-GCCcore-12.3.0 libreadline/8.2-GCCcore-12.3.0
+    Tcl/8.6.13-GCCcore-12.3.0 SQLite/3.42.0-GCCcore-12.3.0
+    XZ/5.4.2-GCCcore-12.3.0 libffi/3.4.4-GCCcore-12.3.0 OpenSSL/1.1
+[dimon env] python   =Python 3.11.3  (/home/svu/e1032484/venvs/dimon/bin/python)
+[dimon env] torch    =2.1.2+cu121 cuda 12.1
+[dimon env] sklearn  =1.3.2
+[dimon env] cuda gpu =True  (False on login nodes is expected)
+=== START Wed Aug 12 02:42:05 PM +08 2026 ===
+node: GN-A40-018
+loading raw V_m for waveform supervision: /home/svu/e1032484/scratch/geo_donet_data_f601.npz
+computing train-only V_m scale ...
+data: 125 hearts, 50797 nodes, targets ['activation_time_ms', 'pca_1', 'pca_2', 'pca_3', 'pca_4', 'pca_5']
+split: 95 train / 5 val / 25 test
+model: {'geo_dim': 60, 'coord_dim': 4, 'width': 200, 'depth': 4, 'output_dim': 6} | 255,606 params | cuda
+waveform supervision: 2048 random nodes/step x 601 complete times | fixed 4096-node validation
+V_m loss: MSE((decoded - truth) / 50.961 mV)
+auxiliary normalized feature loss weight: 0 (AT/PCA shares 0.500/0.500)
+checkpoint -> CheckPts/geodeeponet_pca_vmloss_k5_w200_d4_n2048_5000ep.pt
+epoch     0/5000 | train 0.249496 (Vm 0.249496, ATdiag 0.999248, PCAdiag 1.000617) | val 0.244818 (Vm 0.244818, ATdiag 0.973317, PCAdiag 1.228518) | best 0.244818 @ 0 | eta 257.9 min | sampled val AT MAE 23.692 ms
+epoch   100/5000 | train 0.033507 (Vm 0.033507, ATdiag 0.055182, PCAdiag 55.564017) | val 0.044527 (Vm 0.044527, ATdiag 0.075929, PCAdiag 53.602432) | best 0.044527 @ 100 | eta 22.9 min | sampled val AT MAE 6.328 ms
+epoch   200/5000 | train 0.026912 (Vm 0.026912, ATdiag 0.038544, PCAdiag 49.238302) | val 0.040191 (Vm 0.040191, ATdiag 0.064493, PCAdiag 48.299149) | best 0.039372 @ 190 | eta 21.2 min | sampled val AT MAE 5.868 ms
+epoch   300/5000 | train 0.023320 (Vm 0.023320, ATdiag 0.030876, PCAdiag 45.221132) | val 0.038235 (Vm 0.038235, ATdiag 0.061454, PCAdiag 44.845802) | best 0.036970 @ 220 | eta 19.4 min | sampled val AT MAE 5.768 ms
+epoch   400/5000 | train 0.022964 (Vm 0.022964, ATdiag 0.030030, PCAdiag 44.453007) | val 0.035425 (Vm 0.035425, ATdiag 0.056218, PCAdiag 44.424030) | best 0.035425 @ 400 | eta 18.4 min | sampled val AT MAE 5.414 ms
+epoch   500/5000 | train 0.020853 (Vm 0.020853, ATdiag 0.025854, PCAdiag 41.108813) | val 0.036784 (Vm 0.036784, ATdiag 0.058561, PCAdiag 41.167931) | best 0.035425 @ 400 | eta 17.6 min | sampled val AT MAE 5.615 ms
+epoch   600/5000 | train 0.019905 (Vm 0.019905, ATdiag 0.024266, PCAdiag 39.473642) | val 0.038337 (Vm 0.038337, ATdiag 0.061426, PCAdiag 39.876316) | best 0.035425 @ 400 | eta 16.9 min | sampled val AT MAE 5.749 ms
+epoch   700/5000 | train 0.020693 (Vm 0.020693, ATdiag 0.025460, PCAdiag 40.484612) | val 0.036162 (Vm 0.036162, ATdiag 0.058315, PCAdiag 40.745567) | best 0.035425 @ 400 | eta 16.3 min | sampled val AT MAE 5.632 ms
+epoch   800/5000 | train 0.019986 (Vm 0.019986, ATdiag 0.024276, PCAdiag 38.959351) | val 0.038260 (Vm 0.038260, ATdiag 0.062012, PCAdiag 39.652733) | best 0.035425 @ 400 | eta 15.8 min | sampled val AT MAE 5.805 ms
+epoch   900/5000 | train 0.020417 (Vm 0.020417, ATdiag 0.024844, PCAdiag 39.783926) | val 0.036008 (Vm 0.036008, ATdiag 0.057949, PCAdiag 40.751335) | best 0.035425 @ 400 | eta 15.3 min | sampled val AT MAE 5.620 ms
+epoch  1000/5000 | train 0.019122 (Vm 0.019122, ATdiag 0.022569, PCAdiag 37.717054) | val 0.036654 (Vm 0.036654, ATdiag 0.057051, PCAdiag 38.691040) | best 0.035425 @ 400 | eta 14.9 min | sampled val AT MAE 5.600 ms
+epoch  1100/5000 | train 0.018377 (Vm 0.018377, ATdiag 0.021412, PCAdiag 37.121777) | val 0.036531 (Vm 0.036531, ATdiag 0.057149, PCAdiag 38.169502) | best 0.035425 @ 400 | eta 14.5 min | sampled val AT MAE 5.577 ms
+epoch  1200/5000 | train 0.017949 (Vm 0.017949, ATdiag 0.020720, PCAdiag 36.937242) | val 0.035553 (Vm 0.035553, ATdiag 0.054653, PCAdiag 37.910751) | best 0.034860 @ 1140 | eta 14.1 min | sampled val AT MAE 5.457 ms
+epoch  1300/5000 | train 0.018042 (Vm 0.018042, ATdiag 0.020803, PCAdiag 37.159599) | val 0.036885 (Vm 0.036885, ATdiag 0.056287, PCAdiag 38.066212) | best 0.034860 @ 1140 | eta 13.6 min | sampled val AT MAE 5.570 ms
+epoch  1400/5000 | train 0.018393 (Vm 0.018393, ATdiag 0.021246, PCAdiag 37.128682) | val 0.036069 (Vm 0.036069, ATdiag 0.056484, PCAdiag 38.629845) | best 0.034860 @ 1140 | eta 13.2 min | sampled val AT MAE 5.532 ms
+epoch  1500/5000 | train 0.017549 (Vm 0.017549, ATdiag 0.019843, PCAdiag 35.665052) | val 0.036812 (Vm 0.036812, ATdiag 0.056653, PCAdiag 37.271622) | best 0.034860 @ 1140 | eta 12.8 min | sampled val AT MAE 5.583 ms
+epoch  1600/5000 | train 0.017676 (Vm 0.017676, ATdiag 0.019942, PCAdiag 35.459539) | val 0.036427 (Vm 0.036427, ATdiag 0.055430, PCAdiag 37.281395) | best 0.034860 @ 1140 | eta 12.4 min | sampled val AT MAE 5.553 ms
+epoch  1700/5000 | train 0.018027 (Vm 0.018027, ATdiag 0.020795, PCAdiag 37.712355) | val 0.037426 (Vm 0.037426, ATdiag 0.059076, PCAdiag 39.081490) | best 0.034860 @ 1140 | eta 12.1 min | sampled val AT MAE 5.631 ms
+epoch  1800/5000 | train 0.016731 (Vm 0.016731, ATdiag 0.018593, PCAdiag 34.370003) | val 0.036528 (Vm 0.036528, ATdiag 0.055392, PCAdiag 35.934082) | best 0.034860 @ 1140 | eta 11.7 min | sampled val AT MAE 5.434 ms
+epoch  1900/5000 | train 0.018175 (Vm 0.018175, ATdiag 0.020684, PCAdiag 35.570166) | val 0.037544 (Vm 0.037544, ATdiag 0.059061, PCAdiag 37.773567) | best 0.034860 @ 1140 | eta 11.3 min | sampled val AT MAE 5.676 ms
+epoch  2000/5000 | train 0.016640 (Vm 0.016640, ATdiag 0.018394, PCAdiag 33.841436) | val 0.036682 (Vm 0.036682, ATdiag 0.056611, PCAdiag 35.945328) | best 0.034860 @ 1140 | eta 10.9 min | sampled val AT MAE 5.498 ms
+epoch  2100/5000 | train 0.017501 (Vm 0.017501, ATdiag 0.019731, PCAdiag 34.057905) | val 0.037408 (Vm 0.037408, ATdiag 0.057767, PCAdiag 36.336235) | best 0.034860 @ 1140 | eta 10.5 min | sampled val AT MAE 5.588 ms
+early stop: no validation improvement for 1000 epochs
+done in 7.8 min | best val 0.034860 at epoch 1140
+=== DONE Wed Aug 12 02:52:06 PM +08 2026 ===

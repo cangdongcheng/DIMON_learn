@@ -1,6 +1,7 @@
 """Data, normalisation, phase-decoder, and evaluation helpers."""
 import numpy as np
 import torch
+import torch.nn as nn
 
 
 def split_indices(n_cases, n_train=95, n_val=5):
@@ -128,6 +129,72 @@ def decode_features(features, basis, chunk_nodes=20_000):
     shifts = np.float32(basis["reference_at"]) - features[:, 0]
     dt = float(np.median(np.diff(basis["time"])))
     return shifted_in_chunks(aligned, shifts, dt, chunk_nodes)
+
+
+class DifferentiablePhaseDecoder(nn.Module):
+    """PyTorch version of :func:`decode_features` for waveform supervision.
+
+    The decoder has no trainable parameters.  It reconstructs aligned waveforms
+    from node templates and PCA coefficients, then applies the activation-time
+    shift with linear interpolation. Gradients flow to both predicted AT and PCA
+    coefficients (except at the measure-zero interpolation-cell boundaries and
+    where constant edge padding is active).
+
+    ``forward`` intentionally accepts a node subset. This avoids materialising
+    every heart x 50,797 nodes x 601 frames during training.
+    """
+
+    def __init__(self, basis, n_components):
+        super().__init__()
+        components = np.asarray(basis["components"][:, :n_components],
+                                dtype=np.float32)
+        node_template = np.asarray(basis["node_template"], dtype=np.float32)
+        residual_mean = np.asarray(basis["residual_mean"], dtype=np.float32)
+        time_ms = np.asarray(basis["time"], dtype=np.float32)
+        if node_template.shape[1] != len(time_ms):
+            raise ValueError("decoder node template and time grid disagree")
+        if components.shape != (len(time_ms), n_components):
+            raise ValueError("decoder components have an unexpected shape")
+        self.register_buffer("node_template", torch.from_numpy(node_template))
+        self.register_buffer("residual_mean", torch.from_numpy(residual_mean))
+        self.register_buffer("components", torch.from_numpy(components))
+        self.register_buffer("frame_index", torch.arange(len(time_ms),
+                                                          dtype=torch.float32))
+        self.reference_at = float(basis["reference_at"])
+        self.dt = float(np.median(np.diff(time_ms)))
+        self.n_components = int(n_components)
+
+    def forward(self, physical_features, node_indices):
+        """Decode ``(B,S,1+K)`` physical features to ``V_m(B,S,T)``.
+
+        ``node_indices`` contains the S canonical mesh-node indices. The exact
+        same constant-edge, linear temporal shift is used by the NumPy decoder.
+        """
+        if physical_features.ndim != 3:
+            raise ValueError("physical_features must have shape (batch,nodes,channels)")
+        if physical_features.shape[2] != self.n_components + 1:
+            raise ValueError(f"decoder expects {self.n_components + 1} channels, "
+                             f"got {physical_features.shape[2]}")
+        node_indices = torch.as_tensor(node_indices, dtype=torch.long,
+                                       device=physical_features.device)
+        if node_indices.ndim != 1 or len(node_indices) != physical_features.shape[1]:
+            raise ValueError("node_indices must be 1D and match the feature node axis")
+
+        coefficients = physical_features[..., 1:]
+        aligned = (self.node_template[node_indices][None, :, :]
+                   + self.residual_mean[None, None, :]
+                   + torch.einsum("bsk,tk->bst", coefficients, self.components))
+
+        activation_time_ms = physical_features[..., 0]
+        position = (self.frame_index[None, None, :]
+                    + (self.reference_at - activation_time_ms[..., None]) / self.dt)
+        position = position.clamp(0.0, float(aligned.shape[2] - 1))
+        left = torch.floor(position).to(torch.long)
+        left = left.clamp_max(aligned.shape[2] - 2)
+        fraction = position - left.to(position.dtype)
+        y0 = torch.gather(aligned, 2, left)
+        y1 = torch.gather(aligned, 2, left + 1)
+        return y0 + fraction * (y1 - y0)
 
 
 def to_numpy(value):

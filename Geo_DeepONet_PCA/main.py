@@ -1,4 +1,4 @@
-"""Train/evaluate Geo-DeepONet for AT + aligned-PCA waveform features."""
+"""Train/evaluate Geo-DeepONet with differentiably decoded V_m supervision."""
 import argparse
 import csv
 import os
@@ -12,9 +12,10 @@ import numpy as np
 import torch
 
 from opnn import FeatureDeepONet, initialise_from_at_checkpoint
-from utils import (FeatureNormalizer, activation_time, at_metrics, decode_features,
-                   load_decoder_basis, load_feature_data, median_max_dvdt,
-                   split_indices, to_numpy, vm_metrics)
+from utils import (DifferentiablePhaseDecoder, FeatureNormalizer, activation_time,
+                   at_metrics, decode_features, load_decoder_basis,
+                   load_feature_data, median_max_dvdt, split_indices, to_numpy,
+                   vm_metrics)
 
 
 DATA = "/home/svu/e1032484/scratch/geo_deeponet_pca_f601_k5.npz"
@@ -24,7 +25,8 @@ N_TRAIN, N_VAL = 95, 5
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Geo-DeepONet: AT + aligned-PCA features")
+    parser = argparse.ArgumentParser(
+        description="Geo-DeepONet: AT/PCA outputs supervised through decoded V_m")
     parser.add_argument("--test-model", action="store_true")
     parser.add_argument("--data", default=DATA, help="compact output from prepare_data.py")
     parser.add_argument("--basis", default=BASIS, help="phase-aligned decoder basis")
@@ -34,21 +36,29 @@ def parse_args():
     parser.add_argument("--model-path", default=None)
     parser.add_argument("--init-at-checkpoint", default=None,
                         help="optional legacy Geo_DeepONet AT checkpoint for encoder transfer")
-    parser.add_argument("--epochs", type=int, default=50_000)
-    parser.add_argument("--batch-size", type=int, default=95)
+    parser.add_argument("--epochs", type=int, default=5_000)
+    parser.add_argument("--batch-size", type=int, default=8,
+                        help="hearts per optimizer step")
+    parser.add_argument("--nodes-per-step", type=int, default=2_048,
+                        help="random mesh nodes per heart; all 601 times are decoded")
+    parser.add_argument("--val-nodes", type=int, default=4_096,
+                        help="fixed mesh-node sample used for validation")
     parser.add_argument("--lr", type=float, default=5e-4)
     parser.add_argument("--width", type=int, default=200)
     parser.add_argument("--depth", type=int, default=4)
     parser.add_argument("--n-components", type=int, default=5)
     parser.add_argument("--at-loss-weight", type=float, default=0.5,
-                        help="relative weight of the AT loss group (normalised with PCA weight)")
+                        help="AT share within the optional auxiliary feature loss")
     parser.add_argument("--pca-loss-weight", type=float, default=0.5,
-                        help="relative weight of the combined PCA loss group")
+                        help="PCA share within the optional auxiliary feature loss")
+    parser.add_argument("--feature-loss-weight", type=float, default=0.0,
+                        help="optional normalized feature-loss weight; default 0 means "
+                             "training is supervised only through reconstructed V_m")
     parser.add_argument("--n-train", type=int, default=N_TRAIN)
     parser.add_argument("--n-val", type=int, default=N_VAL)
     parser.add_argument("--val-every", type=int, default=10)
     parser.add_argument("--print-every", type=int, default=100)
-    parser.add_argument("--patience", type=int, default=5000,
+    parser.add_argument("--patience", type=int, default=1000,
                         help="early-stop epochs without val improvement; 0 disables")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--device", default=None, help="default: cuda when available")
@@ -72,23 +82,26 @@ def tensor(array, device):
 
 
 def default_stem(args):
-    return f"geodeeponet_pca_k{args.n_components}_w{args.width}_d{args.depth}_{args.epochs}ep"
+    return (f"geodeeponet_pca_vmloss_k{args.n_components}_w{args.width}_d{args.depth}_"
+            f"n{args.nodes_per_step}_{args.epochs}ep")
 
 
 def save_loss_plot(rows, path):
     values = np.asarray(rows)
     figure, axes = plt.subplots(1, 2, figsize=(12, 4.5))
-    valid = np.isfinite(values[:, 4])
+    valid = np.isfinite(values[:, 5])
     axes[0].semilogy(values[:, 0], values[:, 1], label="train total")
-    axes[0].semilogy(values[valid, 0], values[valid, 4], label="validation total")
-    axes[0].set_title("weighted objective")
-    axes[1].semilogy(values[:, 0], values[:, 2], label="train AT")
-    axes[1].semilogy(values[:, 0], values[:, 3], label="train PCA")
-    axes[1].semilogy(values[valid, 0], values[valid, 5], "--", label="validation AT")
-    axes[1].semilogy(values[valid, 0], values[valid, 6], "--", label="validation PCA")
-    axes[1].set_title("unweighted group MSE")
+    axes[0].semilogy(values[:, 0], values[:, 2], label="train V_m")
+    axes[0].semilogy(values[valid, 0], values[valid, 5], label="validation total")
+    axes[0].semilogy(values[valid, 0], values[valid, 6], label="validation V_m")
+    axes[0].set_title("waveform objective")
+    axes[1].semilogy(values[:, 0], values[:, 3], label="train AT diagnostic")
+    axes[1].semilogy(values[:, 0], values[:, 4], label="train PCA diagnostic")
+    axes[1].semilogy(values[valid, 0], values[valid, 7], "--", label="validation AT")
+    axes[1].semilogy(values[valid, 0], values[valid, 8], "--", label="validation PCA")
+    axes[1].set_title("normalized feature diagnostics (not loss by default)")
     for axis in axes:
-        axis.set_xlabel("epoch"); axis.set_ylabel("normalised MSE")
+        axis.set_xlabel("epoch"); axis.set_ylabel("MSE")
         axis.legend(); axis.grid(alpha=0.3)
     figure.tight_layout(); figure.savefig(path, dpi=150); plt.close(figure)
 
@@ -135,19 +148,62 @@ def grouped_feature_loss(prediction, target, at_group_weight,
     return total, at_mse, pca_mse
 
 
+def validate_training_args(args, n_nodes):
+    if args.batch_size < 1 or args.nodes_per_step < 1 or args.val_nodes < 1:
+        raise SystemExit("batch size and node-sample counts must be positive")
+    if args.nodes_per_step > n_nodes or args.val_nodes > n_nodes:
+        raise SystemExit(f"node samples cannot exceed the {n_nodes} mesh nodes")
+    if args.feature_loss_weight < 0:
+        raise SystemExit("--feature-loss-weight must be non-negative")
+
+
+def physical_features(normalized_features, target_mean, target_std):
+    """Differentiably undo per-channel target standardization."""
+    return normalized_features * target_std + target_mean
+
+
+def sampled_vm_target(vm, case_indices, node_indices, device):
+    """Copy only a (hearts,nodes,all-times) target block to the accelerator."""
+    block = vm[np.asarray(case_indices)[:, None], np.asarray(node_indices)[None, :], :]
+    return tensor(block, device)
+
+
 def train(args, device):
     data = load_inputs(args)
     theta, coords, targets = data["theta"], data["coords"], data["targets"]
     train_idx, val_idx, _ = split_indices(len(theta), args.n_train, args.n_val)
+    validate_training_args(args, len(coords))
     normalizer = FeatureNormalizer(theta[train_idx], coords, targets[train_idx])
+
+    print(f"loading raw V_m for waveform supervision: {args.vm_data}", flush=True)
+    vm_archive = np.load(args.vm_data, allow_pickle=True)
+    vm_all = vm_archive["vm"]  # ~15 GB on CPU; only sampled blocks go to the GPU
+    vm_time = vm_archive["time"].astype(np.float32)
+    if vm_all.shape[:2] != (len(theta), len(coords)):
+        raise SystemExit(f"raw V_m shape {vm_all.shape} disagrees with feature data "
+                         f"({len(theta)}, {len(coords)}, time)")
+    basis = load_decoder_basis(args.basis, args.n_components)
+    if not np.array_equal(vm_time, basis["time"]):
+        raise SystemExit("raw V_m and decoder basis use different time grids")
+    if data["time"] is not None and not np.array_equal(data["time"], vm_time):
+        raise SystemExit("compact feature data and raw V_m use different time grids")
+    # The training split is the first n_train hearts, so this is a view rather
+    # than an 11.5 GB advanced-indexing copy.
+    print("computing train-only V_m scale ...", flush=True)
+    vm_scale = float(np.std(vm_all[:args.n_train], dtype=np.float64))
+    if not np.isfinite(vm_scale) or vm_scale <= 0:
+        raise SystemExit(f"invalid training V_m standard deviation: {vm_scale}")
 
     theta_train = tensor(normalizer.theta(theta[train_idx]), device)
     target_train = tensor(normalizer.targets(targets[train_idx]), device)
     theta_val = tensor(normalizer.theta(theta[val_idx]), device)
     target_val = tensor(normalizer.targets(targets[val_idx]), device)
-    coords_tensor = tensor(normalizer.coords(coords), device)
+    coords_normalized = normalizer.coords(coords)
+    target_mean = tensor(normalizer.target_mean, device).view(1, 1, -1)
+    target_std = tensor(normalizer.target_std, device).view(1, 1, -1)
     at_group_weight, pca_group_weight, pca_weights, pca_weights_np = \
         make_loss_weights(args, device)
+    decoder = DifferentiablePhaseDecoder(basis, args.n_components).to(device)
 
     model = FeatureDeepONet(theta.shape[1], coords.shape[1], args.width, args.depth,
                             targets.shape[2]).to(device)
@@ -166,74 +222,116 @@ def train(args, device):
     print(f"split: {len(train_idx)} train / {len(val_idx)} val / "
           f"{len(theta) - len(train_idx) - len(val_idx)} test")
     print(f"model: {model.config()} | {n_params:,} params | {device}")
-    print(f"loss groups: AT {at_group_weight:.3f} / PCA {pca_group_weight:.3f}")
-    print("PCA weights within group: "
-          + ", ".join(f"PC{k + 1}={weight:.4f}" for k, weight in enumerate(pca_weights_np)))
+    print(f"waveform supervision: {args.nodes_per_step} random nodes/step x "
+          f"{len(vm_time)} complete times | fixed {args.val_nodes}-node validation")
+    print(f"V_m loss: MSE((decoded - truth) / {vm_scale:.5g} mV)")
+    print(f"auxiliary normalized feature loss weight: {args.feature_loss_weight:g} "
+          f"(AT/PCA shares {at_group_weight:.3f}/{pca_group_weight:.3f})")
+    if args.feature_loss_weight > 0:
+        print("PCA weights within auxiliary group: "
+              + ", ".join(f"PC{k + 1}={weight:.4f}"
+                          for k, weight in enumerate(pca_weights_np)))
     print(f"checkpoint -> {model_path}")
 
     history = []
     best_val = float("inf")
     best_epoch = -1
     order = np.arange(len(train_idx))
+    val_rng = np.random.default_rng(args.seed + 1_000)
+    val_nodes = np.sort(val_rng.choice(len(coords), size=args.val_nodes,
+                                       replace=False))
+    val_coords = tensor(coords_normalized[val_nodes], device)
+    val_vm_truth = sampled_vm_target(vm_all, val_idx, val_nodes, device)
     tic = time.time()
     loss_path = os.path.join(out_dir, "loss.csv")
     with open(loss_path, "w", newline="") as handle:
         writer = csv.writer(handle)
-        writer.writerow(["epoch", "train_total", "train_at_mse", "train_pca_mse",
-                         "val_total", "val_at_mse", "val_pca_mse"])
+        writer.writerow(["epoch", "train_total", "train_vm_mse",
+                         "train_at_mse_diagnostic", "train_pca_mse_diagnostic",
+                         "val_total", "val_vm_mse", "val_at_mse_diagnostic",
+                         "val_pca_mse_diagnostic"])
         for epoch in range(args.epochs):
             model.train(); np.random.shuffle(order)
-            running_total = running_at = running_pca = 0.0
+            running_total = running_vm = running_at = running_pca = 0.0
             n_batches = 0
             for start in range(0, len(order), args.batch_size):
                 batch = order[start:start + args.batch_size]
-                prediction = model(theta_train[batch], coords_tensor)
-                loss, at_loss, pca_loss = grouped_feature_loss(
-                    prediction, target_train[batch], at_group_weight,
-                    pca_group_weight, pca_weights)
+                nodes = np.random.choice(len(coords), size=args.nodes_per_step,
+                                         replace=False)
+                coords_batch = tensor(coords_normalized[nodes], device)
+                prediction_normalized = model(theta_train[batch], coords_batch)
+                prediction_physical = physical_features(
+                    prediction_normalized, target_mean, target_std)
+                decoded_vm = decoder(prediction_physical, nodes)
+                vm_truth = sampled_vm_target(vm_all, train_idx[batch], nodes, device)
+                vm_loss = torch.mean(((decoded_vm - vm_truth) / vm_scale) ** 2)
+                feature_loss, at_loss, pca_loss = grouped_feature_loss(
+                    prediction_normalized, target_train[batch][:, nodes],
+                    at_group_weight, pca_group_weight, pca_weights)
+                loss = vm_loss + args.feature_loss_weight * feature_loss
                 optimizer.zero_grad(); loss.backward(); optimizer.step()
                 running_total += loss.item()
+                running_vm += vm_loss.item()
                 running_at += at_loss.item()
                 running_pca += pca_loss.item()
                 n_batches += 1
             train_total = running_total / n_batches
+            train_vm = running_vm / n_batches
             train_at = running_at / n_batches
             train_pca = running_pca / n_batches
 
-            val_total = val_at = val_pca = np.nan
+            val_total = val_vm = val_at = val_pca = np.nan
             if epoch % args.val_every == 0 or epoch == args.epochs - 1:
                 model.eval()
                 with torch.no_grad():
-                    val_prediction = model(theta_val, coords_tensor)
-                    val_loss = grouped_feature_loss(val_prediction, target_val,
-                                                    at_group_weight, pca_group_weight,
-                                                    pca_weights)
-                    val_total, val_at, val_pca = (value.item() for value in val_loss)
+                    val_prediction_normalized = model(theta_val, val_coords)
+                    val_prediction_physical = physical_features(
+                        val_prediction_normalized, target_mean, target_std)
+                    val_decoded_vm = decoder(val_prediction_physical, val_nodes)
+                    val_vm_tensor = torch.mean(
+                        ((val_decoded_vm - val_vm_truth) / vm_scale) ** 2)
+                    val_feature, val_at_tensor, val_pca_tensor = grouped_feature_loss(
+                        val_prediction_normalized, target_val[:, val_nodes],
+                        at_group_weight, pca_group_weight, pca_weights)
+                    val_total_tensor = (val_vm_tensor
+                                        + args.feature_loss_weight * val_feature)
+                    val_total = val_total_tensor.item()
+                    val_vm = val_vm_tensor.item()
+                    val_at = val_at_tensor.item()
+                    val_pca = val_pca_tensor.item()
                 if val_total < best_val:
                     best_val, best_epoch = val_total, epoch
                     torch.save(dict(model_state_dict=model.state_dict(), config=model.config(),
                                     normalizer=normalizer.state(),
                                     target_names=data["target_names"],
-                                    loss_config=dict(at_group_weight=at_group_weight,
+                                    loss_config=dict(type="decoded_vm_mse",
+                                                     vm_scale=vm_scale,
+                                                     nodes_per_step=args.nodes_per_step,
+                                                     val_nodes=args.val_nodes,
+                                                     feature_loss_weight=args.feature_loss_weight,
+                                                     at_group_weight=at_group_weight,
                                                      pca_group_weight=pca_group_weight,
                                                      pca_weights=pca_weights_np),
                                     n_train=args.n_train, n_val=args.n_val), model_path)
-            history.append((epoch, train_total, train_at, train_pca,
-                            val_total, val_at, val_pca))
+            history.append((epoch, train_total, train_vm, train_at, train_pca,
+                            val_total, val_vm, val_at, val_pca))
             writer.writerow(history[-1]); handle.flush()
 
             if epoch % args.print_every == 0 or epoch == args.epochs - 1:
                 elapsed = time.time() - tic
                 eta = elapsed / (epoch + 1) * (args.epochs - epoch - 1)
                 message = (f"epoch {epoch:5d}/{args.epochs} | "
-                           f"train {train_total:.6f} (AT {train_at:.6f}, PCA {train_pca:.6f}) | "
-                           f"val {val_total:.6f} (AT {val_at:.6f}, PCA {val_pca:.6f}) | "
+                           f"train {train_total:.6f} (Vm {train_vm:.6f}, "
+                           f"ATdiag {train_at:.6f}, PCAdiag {train_pca:.6f}) | "
+                           f"val {val_total:.6f} (Vm {val_vm:.6f}, "
+                           f"ATdiag {val_at:.6f}, PCAdiag {val_pca:.6f}) | "
                            f"best {best_val:.6f} @ {best_epoch} | "
                            f"eta {eta / 60:.1f} min")
                 if np.isfinite(val_total):
-                    physical = normalizer.targets_inverse(to_numpy(val_prediction))
-                    at_mae = np.abs(physical[..., 0] - targets[val_idx, :, 0]).mean()
-                    message += f" | val AT MAE {at_mae:.3f} ms"
+                    physical = to_numpy(val_prediction_physical)
+                    at_mae = np.abs(physical[..., 0]
+                                    - targets[val_idx][:, val_nodes, 0]).mean()
+                    message += f" | sampled val AT MAE {at_mae:.3f} ms"
                 print(message, flush=True)
 
             if args.patience > 0 and best_epoch >= 0 and epoch - best_epoch >= args.patience:
